@@ -1,19 +1,15 @@
-"""Plotly-based plotting utilities for waveforms, spectral analyses, and
-general-purpose figures.
+"""Plotly-based plotting utilities: single-trace 1D/2D plots, multi-panel
+subplots, and distribution plots, with optional journal/paper style presets.
 """
 
+from plotter.paper_presets import PAPER_PRESETS
 from plotter.plot import (
-    PAPER_PRESETS,
     plot_1d,
     plot_1d_multi,
     plot_2d,
     plot_box,
-    plot_fft,
     plot_multi,
-    plot_psd,
-    plot_stft,
     plot_violin,
-    plot_wave,
 )
 
 __all__ = [
@@ -22,10 +18,6 @@ __all__ = [
     "plot_1d_multi",
     "plot_2d",
     "plot_box",
-    "plot_fft",
     "plot_multi",
-    "plot_psd",
-    "plot_stft",
     "plot_violin",
-    "plot_wave",
 ]

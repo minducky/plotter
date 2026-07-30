@@ -253,8 +253,14 @@ def plot_multi(
         height=height,
     )
 
+    has_2d = any(panel["kind"] == "2d" for panel in panels)
     fig = make_subplots(
-        rows=rows, cols=cols, subplot_titles=[p.get("name", "") for p in panels]
+        rows=rows,
+        cols=cols,
+        subplot_titles=[p.get("name", "") for p in panels],
+        # Leave room between columns for each 2D panel's own colorbar so it
+        # doesn't overlap the tick labels of the panel to its right.
+        horizontal_spacing=(0.18 if has_2d else None),
     )
 
     for idx, panel in enumerate(panels):
@@ -263,8 +269,18 @@ def plot_multi(
         if panel["kind"] == "1d":
             trace = build_line_trace(panel["x"], panel["y"], panel.get("name", ""))
         else:
+            subplot = fig.get_subplot(row, col)
+            x0, x1 = subplot.xaxis.domain
+            y0, y1 = subplot.yaxis.domain
+            colorbar = dict(
+                x=x1 + 0.015, y=(y0 + y1) / 2, len=y1 - y0, thickness=15
+            )
             trace = build_heatmap_trace(
-                panel["x"], panel["y"], panel["z"], panel.get("name", "")
+                panel["x"],
+                panel["y"],
+                panel["z"],
+                panel.get("name", ""),
+                colorbar=colorbar,
             )
         fig.add_trace(trace, row=row, col=col)
         fig.update_xaxes(

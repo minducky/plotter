@@ -62,10 +62,16 @@ def build_heatmap_trace(
     z: np.ndarray,
     name: str,
     colorscale: str = "Cividis",
+    colorbar: dict | None = None,
 ) -> go.Heatmap:
     """Build a Plotly Heatmap trace. Accepts numpy arrays or torch tensors."""
     return go.Heatmap(
-        x=to_numpy(x), y=to_numpy(y), z=to_numpy(z), colorscale=colorscale, name=name
+        x=to_numpy(x),
+        y=to_numpy(y),
+        z=to_numpy(z),
+        colorscale=colorscale,
+        name=name,
+        colorbar=colorbar,
     )
 
 

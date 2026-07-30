@@ -7,7 +7,7 @@ multi-panel/multi-line plots, and distribution (violin/box) plots, with a
 ## Usage
 
 ```bash
-git clone <repo-url>
+git clone https://github.com/minducky/plotter.git
 cd plotter
 pip install -e .
 ```

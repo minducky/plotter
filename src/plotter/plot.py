@@ -203,6 +203,8 @@ def plot_multi(
     width: int | None = None,
     height: int | None = None,
     paper: str | None = None,
+    link_x: bool = False,
+    link_y: bool = False,
     download: bool = False,
     download_fpath: str | None = None,
 ) -> None:
@@ -228,6 +230,11 @@ def plot_multi(
         height: Figure height in pixels.
         paper: Journal preset key from PAPER_PRESETS, or None. See plot_1d
             for how paper presets interact with the explicit style args.
+        link_x: If True, zooming/panning the x-axis of any panel applies
+            the same x-range to every panel.
+        link_y: If True, zooming/panning the y-axis of any panel applies
+            the same y-range to every panel. Combine with link_x=True to
+            fully sync 2D panels (e.g. heatmaps) across the grid.
         download: Whether to also save the figure to disk.
         download_fpath: Output path when download=True. Format is inferred
             from the extension (".html" for interactive HTML, otherwise a
@@ -272,6 +279,11 @@ def plot_multi(
             row=row,
             col=col,
         )
+
+    if link_x:
+        fig.update_xaxes(matches="x")
+    if link_y:
+        fig.update_yaxes(matches="y")
 
     fig.update_layout(
         title=dict(

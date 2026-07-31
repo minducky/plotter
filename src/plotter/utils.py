@@ -75,6 +75,27 @@ def build_heatmap_trace(
     )
 
 
+def build_surface_trace(
+    x: np.ndarray,
+    y: np.ndarray,
+    z: np.ndarray,
+    name: str,
+    colorscale: str = "Cividis",
+    showscale: bool = True,
+    colorbar: dict | None = None,
+) -> go.Surface:
+    """Build a Plotly Surface trace. Accepts numpy arrays or torch tensors."""
+    return go.Surface(
+        x=to_numpy(x),
+        y=to_numpy(y),
+        z=to_numpy(z),
+        colorscale=colorscale,
+        name=name,
+        showscale=showscale,
+        colorbar=colorbar,
+    )
+
+
 def tickfont(style: dict) -> dict | None:
     """Build a Plotly tickfont dict from a resolved style, or None."""
     if style.get("tick_fontsize") is None:

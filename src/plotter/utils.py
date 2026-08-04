@@ -52,6 +52,34 @@ def download_figure_multi(fig: go.Figure, download_fpaths: list[str]) -> None:
         download_figure(fig, fpath)
 
 
+def finalise_figure(
+    fig: go.Figure,
+    show: bool,
+    download: bool,
+    download_fpath: str | list[str] | None,
+) -> None:
+    """Show and/or save a figure, per the show/download/download_fpath flags.
+
+    Args:
+        fig: Figure to show/save.
+        show: Whether to call fig.show().
+        download: Whether to also save the figure to disk.
+        download_fpath: Output path when download=True, or a list of paths
+            to save the same figure in multiple formats at once (e.g. one
+            ".pdf" and one ".html"). Format is inferred per-path from its
+            extension.
+    """
+    if show:
+        fig.show()
+    if download:
+        if download_fpath is None:
+            raise ValueError("download_fpath must be set when download=True")
+        fpaths = (
+            download_fpath if isinstance(download_fpath, list) else [download_fpath]
+        )
+        download_figure_multi(fig, fpaths)
+
+
 def build_line_trace(
     x: np.ndarray,
     y: np.ndarray,
@@ -76,6 +104,9 @@ def build_heatmap_trace(
     name: str,
     colorscale: str = "Cividis",
     colorbar: dict | None = None,
+    zmin: float | None = None,
+    zmax: float | None = None,
+    hovertemplate: str | None = None,
 ) -> go.Heatmap:
     """Build a Plotly Heatmap trace. Accepts numpy arrays or torch tensors."""
     return go.Heatmap(
@@ -85,6 +116,9 @@ def build_heatmap_trace(
         colorscale=colorscale,
         name=name,
         colorbar=colorbar,
+        zmin=zmin,
+        zmax=zmax,
+        hovertemplate=hovertemplate,
     )
 
 

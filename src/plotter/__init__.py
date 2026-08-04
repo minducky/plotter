@@ -7,7 +7,9 @@ from plotter.plot import (
     plot_1d,
     plot_1d_multi,
     plot_2d,
+    plot_3d,
     plot_box,
+    plot_confusion_matrix,
     plot_multi,
     plot_violin,
 )
@@ -17,7 +19,9 @@ __all__ = [
     "plot_1d",
     "plot_1d_multi",
     "plot_2d",
+    "plot_3d",
     "plot_box",
+    "plot_confusion_matrix",
     "plot_multi",
     "plot_violin",
 ]

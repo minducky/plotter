@@ -39,6 +39,19 @@ def download_figure(fig: go.Figure, download_fpath: str) -> None:
         fig.write_image(download_fpath)
 
 
+def download_figure_multi(fig: go.Figure, download_fpaths: list[str]) -> None:
+    """Save a figure to multiple paths at once, format inferred per-path.
+
+    Args:
+        fig: Figure to save.
+        download_fpaths: Output paths (e.g. one ".pdf" and one ".html").
+            Each path's format is inferred from its extension, same as
+            `download_figure`.
+    """
+    for fpath in download_fpaths:
+        download_figure(fig, fpath)
+
+
 def build_line_trace(
     x: np.ndarray,
     y: np.ndarray,

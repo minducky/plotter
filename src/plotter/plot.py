@@ -12,7 +12,7 @@ from plotter.utils import (
     build_heatmap_trace,
     build_line_trace,
     build_surface_trace,
-    download_figure,
+    finalise_figure,
     tickfont,
     to_numpy,
 )
@@ -40,8 +40,9 @@ def plot_1d(
     width: int | None = None,
     height: int | None = None,
     paper: str | None = None,
+    show: bool = True,
     download: bool = False,
-    download_fpath: str | None = None,
+    download_fpath: str | list[str] | None = None,
 ) -> None:
     """Plot a single 1D line trace.
 
@@ -68,10 +69,15 @@ def plot_1d(
             or None to use the explicit style args above as-is. When set,
             the preset's font/size/figure-size values override the
             corresponding explicit args.
+        show: Whether to call fig.show(). Defaults to True for interactive/
+            notebook use; set False when calling from an unattended/headless
+            context (e.g. an HPC training job), where fig.show() may error
+            or hang with no display available.
         download: Whether to also save the figure to disk.
-        download_fpath: Output path when download=True. Format is inferred
-            from the extension (".html" for interactive HTML, otherwise a
-            static image via Kaleido, e.g. ".pdf"/".png"/".svg").
+        download_fpath: Output path when download=True, or a list of paths
+            to save the same figure in multiple formats at once (e.g. one
+            ".pdf" and one ".html"). Format is inferred per-path from its
+            extension.
     """
     style = resolve_style(
         paper,
@@ -100,9 +106,7 @@ def plot_1d(
         zeroline_color="lightgray",
     )
 
-    fig.show()
-    if download:
-        download_figure(fig, download_fpath)
+    finalise_figure(fig, show, download, download_fpath)
 
 
 def plot_2d(
@@ -126,8 +130,9 @@ def plot_2d(
     width: int | None = None,
     height: int | None = None,
     paper: str | None = None,
+    show: bool = True,
     download: bool = False,
-    download_fpath: str | None = None,
+    download_fpath: str | list[str] | None = None,
 ) -> None:
     """Plot a single 2D heatmap.
 
@@ -153,10 +158,15 @@ def plot_2d(
         height: Figure height in pixels.
         paper: Journal preset key from PAPER_PRESETS, or None. See plot_1d
             for how paper presets interact with the explicit style args.
+        show: Whether to call fig.show(). Defaults to True for interactive/
+            notebook use; set False when calling from an unattended/headless
+            context (e.g. an HPC training job), where fig.show() may error
+            or hang with no display available.
         download: Whether to also save the figure to disk.
-        download_fpath: Output path when download=True. Format is inferred
-            from the extension (".html" for interactive HTML, otherwise a
-            static image via Kaleido, e.g. ".pdf"/".png"/".svg").
+        download_fpath: Output path when download=True, or a list of paths
+            to save the same figure in multiple formats at once (e.g. one
+            ".pdf" and one ".html"). Format is inferred per-path from its
+            extension.
     """
     style = resolve_style(
         paper,
@@ -184,9 +194,7 @@ def plot_2d(
         yaxis_fontcolor=yaxis_fontcolor,
     )
 
-    fig.show()
-    if download:
-        download_figure(fig, download_fpath)
+    finalise_figure(fig, show, download, download_fpath)
 
 
 # %% 3D plot builder
@@ -202,15 +210,25 @@ def plot_3d(
     title_fontsize: int = 24,
     title_fontcolor: str = "black",
     xaxis_title: str | None = None,
+    xaxis_font: str = "Arial",
+    xaxis_fontsize: int = 16,
+    xaxis_fontcolor: str = "black",
     yaxis_title: str | None = None,
+    yaxis_font: str = "Arial",
+    yaxis_fontsize: int = 16,
+    yaxis_fontcolor: str = "black",
     zaxis_title: str | None = None,
+    zaxis_font: str = "Arial",
+    zaxis_fontsize: int = 16,
+    zaxis_fontcolor: str = "black",
     tick_fontsize: int | None = None,
     width: int | None = None,
     height: int | None = None,
     paper: str | None = None,
     showscale: bool = True,
+    show: bool = True,
     download: bool = False,
-    download_fpath: str | None = None,
+    download_fpath: str | list[str] | None = None,
 ) -> None:
     """Plot a single 3D surface.
 
@@ -224,28 +242,46 @@ def plot_3d(
         title_fontsize: Title font size.
         title_fontcolor: Title font color.
         xaxis_title: X-axis label.
+        xaxis_font: X-axis label font family.
+        xaxis_fontsize: X-axis label font size.
+        xaxis_fontcolor: X-axis label font color.
         yaxis_title: Y-axis label.
+        yaxis_font: Y-axis label font family.
+        yaxis_fontsize: Y-axis label font size.
+        yaxis_fontcolor: Y-axis label font color.
         zaxis_title: Z-axis label.
+        zaxis_font: Z-axis label font family.
+        zaxis_fontsize: Z-axis label font size.
+        zaxis_fontcolor: Z-axis label font color.
         tick_fontsize: Tick label font size for all three axes, or None for
             Plotly's default.
         width: Figure width in pixels.
         height: Figure height in pixels.
         paper: Journal preset key from PAPER_PRESETS, or None. See plot_1d
             for how paper presets interact with the explicit style args.
+            Paper presets only define x/y-axis font/size; zaxis_font/
+            zaxis_fontsize are never overridden by a preset.
         showscale: Whether to show the surface's color scale bar.
+        show: Whether to call fig.show(). Defaults to True for interactive/
+            notebook use; set False when calling from an unattended/headless
+            context (e.g. an HPC training job), where fig.show() may error
+            or hang with no display available.
         download: Whether to also save the figure to disk.
-        download_fpath: Output path when download=True. Format is inferred
-            from the extension (".html" for interactive HTML, otherwise a
-            static image via Kaleido, e.g. ".pdf"/".png"/".svg").
+        download_fpath: Output path when download=True, or a list of paths
+            to save the same figure in multiple formats at once (e.g. one
+            ".pdf" and one ".html"). Format is inferred per-path from its
+            extension.
     """
     style = resolve_style(
         paper,
         title_font=title_font,
         title_fontsize=title_fontsize,
-        xaxis_font=title_font,
-        xaxis_fontsize=16,
-        yaxis_font=title_font,
-        yaxis_fontsize=16,
+        xaxis_font=xaxis_font,
+        xaxis_fontsize=xaxis_fontsize,
+        yaxis_font=yaxis_font,
+        yaxis_fontsize=yaxis_fontsize,
+        zaxis_font=zaxis_font,
+        zaxis_fontsize=zaxis_fontsize,
         tick_fontsize=tick_fontsize,
         width=width,
         height=height,
@@ -265,9 +301,30 @@ def plot_3d(
             xanchor="center",
         ),
         scene=dict(
-            xaxis_title=xaxis_title,
-            yaxis_title=yaxis_title,
-            zaxis_title=zaxis_title,
+            xaxis_title=dict(
+                text=xaxis_title,
+                font=dict(
+                    family=style["xaxis_font"],
+                    size=style["xaxis_fontsize"],
+                    color=xaxis_fontcolor,
+                ),
+            ),
+            yaxis_title=dict(
+                text=yaxis_title,
+                font=dict(
+                    family=style["yaxis_font"],
+                    size=style["yaxis_fontsize"],
+                    color=yaxis_fontcolor,
+                ),
+            ),
+            zaxis_title=dict(
+                text=zaxis_title,
+                font=dict(
+                    family=style["zaxis_font"],
+                    size=style["zaxis_fontsize"],
+                    color=zaxis_fontcolor,
+                ),
+            ),
             xaxis_tickfont=tickfont(style),
             yaxis_tickfont=tickfont(style),
             zaxis_tickfont=tickfont(style),
@@ -276,9 +333,7 @@ def plot_3d(
         height=style["height"],
     )
 
-    fig.show()
-    if download:
-        download_figure(fig, download_fpath)
+    finalise_figure(fig, show, download, download_fpath)
 
 
 # %% Multi-panel and distribution plots
@@ -298,8 +353,9 @@ def plot_multi(
     paper: str | None = None,
     link_x: bool = False,
     link_y: bool = False,
+    show: bool = True,
     download: bool = False,
-    download_fpath: str | None = None,
+    download_fpath: str | list[str] | None = None,
 ) -> None:
     """Plot a grid of 1D, 2D, and/or 3D panels as subplots.
 
@@ -335,10 +391,15 @@ def plot_multi(
             applies the same y-range to every 1D/2D panel. Combine with
             link_x=True to fully sync 2D panels (e.g. heatmaps) across the
             grid.
+        show: Whether to call fig.show(). Defaults to True for interactive/
+            notebook use; set False when calling from an unattended/headless
+            context (e.g. an HPC training job), where fig.show() may error
+            or hang with no display available.
         download: Whether to also save the figure to disk.
-        download_fpath: Output path when download=True. Format is inferred
-            from the extension (".html" for interactive HTML, otherwise a
-            static image via Kaleido, e.g. ".pdf"/".png"/".svg").
+        download_fpath: Output path when download=True, or a list of paths
+            to save the same figure in multiple formats at once (e.g. one
+            ".pdf" and one ".html"). Format is inferred per-path from its
+            extension.
     """
     style = resolve_style(
         paper,
@@ -461,9 +522,7 @@ def plot_multi(
         height=style["height"],
     )
 
-    fig.show()
-    if download:
-        download_figure(fig, download_fpath)
+    finalise_figure(fig, show, download, download_fpath)
 
 
 def plot_1d_multi(
@@ -484,8 +543,9 @@ def plot_1d_multi(
     width: int | None = None,
     height: int | None = None,
     paper: str | None = None,
+    show: bool = True,
     download: bool = False,
-    download_fpath: str | None = None,
+    download_fpath: str | list[str] | None = None,
 ) -> None:
     """Plot multiple 1D lines together on one shared figure.
 
@@ -510,10 +570,15 @@ def plot_1d_multi(
         height: Figure height in pixels.
         paper: Journal preset key from PAPER_PRESETS, or None. See plot_1d
             for how paper presets interact with the explicit style args.
+        show: Whether to call fig.show(). Defaults to True for interactive/
+            notebook use; set False when calling from an unattended/headless
+            context (e.g. an HPC training job), where fig.show() may error
+            or hang with no display available.
         download: Whether to also save the figure to disk.
-        download_fpath: Output path when download=True. Format is inferred
-            from the extension (".html" for interactive HTML, otherwise a
-            static image via Kaleido, e.g. ".pdf"/".png"/".svg").
+        download_fpath: Output path when download=True, or a list of paths
+            to save the same figure in multiple formats at once (e.g. one
+            ".pdf" and one ".html"). Format is inferred per-path from its
+            extension.
     """
     style = resolve_style(
         paper,
@@ -543,9 +608,7 @@ def plot_1d_multi(
         zeroline_color="lightgray",
     )
 
-    fig.show()
-    if download:
-        download_figure(fig, download_fpath)
+    finalise_figure(fig, show, download, download_fpath)
 
 
 def plot_violin(
@@ -556,6 +619,9 @@ def plot_violin(
     title_fontsize: int = 24,
     title_fontcolor: str = "black",
     xaxis_title: str | None = None,
+    xaxis_font: str = "Arial",
+    xaxis_fontsize: int = 16,
+    xaxis_fontcolor: str = "black",
     yaxis_title: str | None = None,
     yaxis_font: str = "Arial",
     yaxis_fontsize: int = 16,
@@ -564,8 +630,9 @@ def plot_violin(
     width: int | None = None,
     height: int | None = None,
     paper: str | None = None,
+    show: bool = True,
     download: bool = False,
-    download_fpath: str | None = None,
+    download_fpath: str | list[str] | None = None,
 ) -> None:
     """Plot one or more distributions as violin plots.
 
@@ -578,6 +645,9 @@ def plot_violin(
         title_fontsize: Title font size.
         title_fontcolor: Title font color.
         xaxis_title: X-axis label.
+        xaxis_font: X-axis label font family.
+        xaxis_fontsize: X-axis label font size.
+        xaxis_fontcolor: X-axis label font color.
         yaxis_title: Y-axis label.
         yaxis_font: Y-axis label font family.
         yaxis_fontsize: Y-axis label font size.
@@ -587,10 +657,15 @@ def plot_violin(
         height: Figure height in pixels.
         paper: Journal preset key from PAPER_PRESETS, or None. See plot_1d
             for how paper presets interact with the explicit style args.
+        show: Whether to call fig.show(). Defaults to True for interactive/
+            notebook use; set False when calling from an unattended/headless
+            context (e.g. an HPC training job), where fig.show() may error
+            or hang with no display available.
         download: Whether to also save the figure to disk.
-        download_fpath: Output path when download=True. Format is inferred
-            from the extension (".html" for interactive HTML, otherwise a
-            static image via Kaleido, e.g. ".pdf"/".png"/".svg").
+        download_fpath: Output path when download=True, or a list of paths
+            to save the same figure in multiple formats at once (e.g. one
+            ".pdf" and one ".html"). Format is inferred per-path from its
+            extension.
     """
     labels = (
         labels if labels is not None else [f"Group {i + 1}" for i in range(len(data))]
@@ -599,8 +674,8 @@ def plot_violin(
         paper,
         title_font=title_font,
         title_fontsize=title_fontsize,
-        xaxis_font=title_font,
-        xaxis_fontsize=16,
+        xaxis_font=xaxis_font,
+        xaxis_fontsize=xaxis_fontsize,
         yaxis_font=yaxis_font,
         yaxis_fontsize=yaxis_fontsize,
         tick_fontsize=tick_fontsize,
@@ -621,13 +696,166 @@ def plot_violin(
         style,
         title_fontcolor=title_fontcolor,
         xaxis_title=xaxis_title,
+        xaxis_fontcolor=xaxis_fontcolor,
         yaxis_title=yaxis_title,
         yaxis_fontcolor=yaxis_fontcolor,
     )
 
-    fig.show()
-    if download:
-        download_figure(fig, download_fpath)
+    finalise_figure(fig, show, download, download_fpath)
+
+
+def plot_confusion_matrix(
+    cm: np.ndarray,
+    labels: list,
+    title: str | None = None,
+    normalize: bool = True,
+    reversed_axis: bool = True,
+    colorscale: str = "Blues",
+    title_font: str | None = None,
+    title_fontsize: int = 16,
+    title_fontcolor: str = "black",
+    xaxis_title: str | None = "Predicted",
+    xaxis_font: str = "Arial",
+    xaxis_fontsize: int = 16,
+    xaxis_fontcolor: str = "black",
+    yaxis_title: str | None = "True",
+    yaxis_font: str = "Arial",
+    yaxis_fontsize: int = 16,
+    yaxis_fontcolor: str = "black",
+    tick_fontsize: int | None = None,
+    width: int | None = None,
+    height: int | None = None,
+    paper: str | None = None,
+    show: bool = True,
+    download: bool = False,
+    download_fpath: str | list[str] | None = None,
+) -> None:
+    """Plot a confusion matrix as a heatmap.
+
+    Args:
+        cm: Confusion matrix of shape (n_classes, n_classes); rows are true
+            classes, columns are predicted classes. Numpy array or torch
+            tensor.
+        labels: Class labels, length n_classes, shared by both axes.
+        title: Figure title.
+        normalize: If True (default), row-normalize so each cell shows
+            recall (fraction of the true class predicted as each class);
+            colorbar is fixed to [0, 1] and formatted as a percentage. If
+            False, plots raw counts.
+        reversed_axis: If True (default), reverses the y-axis so the
+            diagonal runs from top-left to bottom-right.
+        colorscale: Plotly heatmap colorscale name.
+        title_font: Title font family. Defaults to None (Plotly's own
+            default font, unstyled) rather than "Arial" like the other
+            plot_* functions, so a bare call reproduces a plain, unbolded
+            title. Pass an explicit family (or a `paper` preset) to style
+            it.
+        title_fontsize: Title font size.
+        title_fontcolor: Title font color.
+        xaxis_title: X-axis label.
+        xaxis_font: X-axis label font family.
+        xaxis_fontsize: X-axis label font size.
+        xaxis_fontcolor: X-axis label font color.
+        yaxis_title: Y-axis label.
+        yaxis_font: Y-axis label font family.
+        yaxis_fontsize: Y-axis label font size.
+        yaxis_fontcolor: Y-axis label font color.
+        tick_fontsize: Tick label font size, or None for Plotly's default.
+        width: Figure width in pixels.
+        height: Figure height in pixels.
+        paper: Journal preset key from PAPER_PRESETS, or None. See plot_1d
+            for how paper presets interact with the explicit style args.
+        show: Whether to call fig.show(). Defaults to True for interactive/
+            notebook use; set False when calling from an unattended/headless
+            context (e.g. an HPC training job), where fig.show() may error
+            or hang with no display available.
+        download: Whether to also save the figure to disk.
+        download_fpath: Output path when download=True, or a list of paths
+            to save the same figure in multiple formats at once (e.g. one
+            ".pdf" and one ".html"). Format is inferred per-path from its
+            extension.
+    """
+    cm = to_numpy(cm).astype(float)
+    labels = [str(l) for l in labels]
+
+    if normalize:
+        row_sums = cm.sum(axis=1, keepdims=True)
+        z = np.where(row_sums > 0, cm / row_sums, 0.0)
+        zmin, zmax = 0, 1
+        colorbar = dict(title="Recall", tickformat=".0%")
+        hovertemplate = "True: %{y}<br>Pred: %{x}<br>Recall: %{z:.1%}<extra></extra>"
+    else:
+        z = cm
+        zmin, zmax = None, None
+        colorbar = dict(title="Count")
+        hovertemplate = "True: %{y}<br>Pred: %{x}<br>Count: %{z}<extra></extra>"
+
+    style = resolve_style(
+        paper,
+        title_font=title_font,
+        title_fontsize=title_fontsize,
+        xaxis_font=xaxis_font,
+        xaxis_fontsize=xaxis_fontsize,
+        yaxis_font=yaxis_font,
+        yaxis_fontsize=yaxis_fontsize,
+        tick_fontsize=tick_fontsize,
+        width=width,
+        height=height,
+    )
+
+    title_font_dict = dict(size=style["title_fontsize"], color=title_fontcolor)
+    if style["title_font"] is not None:
+        title_font_dict["family"] = style["title_font"]
+
+    fig = go.Figure(
+        build_heatmap_trace(
+            labels,
+            labels,
+            z,
+            "",
+            colorscale=colorscale,
+            colorbar=colorbar,
+            zmin=zmin,
+            zmax=zmax,
+            hovertemplate=hovertemplate,
+        )
+    )
+    fig.update_layout(
+        title=dict(text=title, font=title_font_dict),
+        xaxis=dict(
+            title=dict(
+                text=xaxis_title,
+                font=dict(
+                    family=style["xaxis_font"],
+                    size=style["xaxis_fontsize"],
+                    color=xaxis_fontcolor,
+                ),
+            ),
+            tickfont=tickfont(style),
+            categoryorder="array",
+            categoryarray=labels,
+        ),
+        yaxis=dict(
+            title=dict(
+                text=yaxis_title,
+                font=dict(
+                    family=style["yaxis_font"],
+                    size=style["yaxis_fontsize"],
+                    color=yaxis_fontcolor,
+                ),
+            ),
+            tickfont=tickfont(style),
+            categoryorder="array",
+            categoryarray=labels,
+            autorange="reversed" if reversed_axis else True,
+        ),
+        width=style["width"],
+        height=style["height"],
+        paper_bgcolor="white",
+        plot_bgcolor="white",
+    )
+
+    finalise_figure(fig, show, download, download_fpath)
 
 
 def plot_box(
@@ -638,6 +866,9 @@ def plot_box(
     title_fontsize: int = 24,
     title_fontcolor: str = "black",
     xaxis_title: str | None = None,
+    xaxis_font: str = "Arial",
+    xaxis_fontsize: int = 16,
+    xaxis_fontcolor: str = "black",
     yaxis_title: str | None = None,
     yaxis_font: str = "Arial",
     yaxis_fontsize: int = 16,
@@ -646,8 +877,9 @@ def plot_box(
     width: int | None = None,
     height: int | None = None,
     paper: str | None = None,
+    show: bool = True,
     download: bool = False,
-    download_fpath: str | None = None,
+    download_fpath: str | list[str] | None = None,
 ) -> None:
     """Plot one or more distributions as box plots.
 
@@ -660,6 +892,9 @@ def plot_box(
         title_fontsize: Title font size.
         title_fontcolor: Title font color.
         xaxis_title: X-axis label.
+        xaxis_font: X-axis label font family.
+        xaxis_fontsize: X-axis label font size.
+        xaxis_fontcolor: X-axis label font color.
         yaxis_title: Y-axis label.
         yaxis_font: Y-axis label font family.
         yaxis_fontsize: Y-axis label font size.
@@ -669,10 +904,15 @@ def plot_box(
         height: Figure height in pixels.
         paper: Journal preset key from PAPER_PRESETS, or None. See plot_1d
             for how paper presets interact with the explicit style args.
+        show: Whether to call fig.show(). Defaults to True for interactive/
+            notebook use; set False when calling from an unattended/headless
+            context (e.g. an HPC training job), where fig.show() may error
+            or hang with no display available.
         download: Whether to also save the figure to disk.
-        download_fpath: Output path when download=True. Format is inferred
-            from the extension (".html" for interactive HTML, otherwise a
-            static image via Kaleido, e.g. ".pdf"/".png"/".svg").
+        download_fpath: Output path when download=True, or a list of paths
+            to save the same figure in multiple formats at once (e.g. one
+            ".pdf" and one ".html"). Format is inferred per-path from its
+            extension.
     """
     labels = (
         labels if labels is not None else [f"Group {i + 1}" for i in range(len(data))]
@@ -681,8 +921,8 @@ def plot_box(
         paper,
         title_font=title_font,
         title_fontsize=title_fontsize,
-        xaxis_font=title_font,
-        xaxis_fontsize=16,
+        xaxis_font=xaxis_font,
+        xaxis_fontsize=xaxis_fontsize,
         yaxis_font=yaxis_font,
         yaxis_fontsize=yaxis_fontsize,
         tick_fontsize=tick_fontsize,
@@ -699,10 +939,9 @@ def plot_box(
         style,
         title_fontcolor=title_fontcolor,
         xaxis_title=xaxis_title,
+        xaxis_fontcolor=xaxis_fontcolor,
         yaxis_title=yaxis_title,
         yaxis_fontcolor=yaxis_fontcolor,
     )
 
-    fig.show()
-    if download:
-        download_figure(fig, download_fpath)
+    finalise_figure(fig, show, download, download_fpath)

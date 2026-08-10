@@ -6,15 +6,35 @@ part of a preset — journals constrain column width, not figure height, so
 `height` always comes from the caller's explicit arg.
 """
 
-_PAPER_DPI = 300
+# Kaleido (the headless-Chrome renderer behind `write_image`) always treats a
+# figure's `width`/`height` as CSS pixels at 96 px/inch when laying out the
+# exported page (a PDF/SVG page's physical size, or a PNG's pixel dimensions
+# at scale=1). This is fixed by the renderer, not something `plotter`
+# controls, so `_mm_to_px` must convert at 96 dpi for a `width_mm` preset to
+# produce a PDF whose actual physical page width matches it — converting at
+# 300 dpi instead makes the page ~3.1x too large. Confirmed by inspecting a
+# rendered PDF's /MediaBox.
+#
+# Kaleido's `scale=` kwarg on `write_image` does NOT give a way around this:
+# it uniformly enlarges the whole exported page (not just embedded raster
+# resolution), confirmed empirically by comparing a PDF's /MediaBox at
+# scale=1 vs scale=3.125 for the same width/height — the page grew by
+# exactly 3.125x, not just the raster content. So there's no free way to
+# raise embedded-raster fidelity without also growing the physical page
+# size; `plotter` deliberately leaves `scale` at its default of 1 and
+# prioritizes correct physical page sizing.
+_KALEIDO_REFERENCE_DPI = 96
 
 
-def _mm_to_px(mm: float, dpi: int = _PAPER_DPI) -> int:
-    """Convert a length in millimeters to pixels at the given DPI.
+def _mm_to_px(mm: float, dpi: int = _KALEIDO_REFERENCE_DPI) -> int:
+    """Convert a length in millimeters to the pixel width/height Kaleido
+    needs to produce that physical size in an exported PDF/SVG/PNG.
 
     Args:
         mm: Length in millimeters.
-        dpi: Resolution to convert at.
+        dpi: Reference resolution; defaults to Kaleido's fixed 96 px/inch
+            page-layout assumption. Only override this for a different
+            renderer with a different pixel-to-physical-size assumption.
 
     Returns:
         The equivalent length in pixels, rounded to the nearest integer.
@@ -28,7 +48,7 @@ PAPER_PRESETS: dict[str, dict] = {
         "tick_fontsize": 7,
         "label_fontsize": 8,
         "title_fontsize": 9,
-        "width_mm": 161,
+        "width_mm": 89,
     },
     "TASLP_double": {
         "font_family": "Times New Roman, Times, DejaVu Serif",

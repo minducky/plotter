@@ -37,6 +37,7 @@ def plot_1d(
     yaxis_fontsize: int = 16,
     yaxis_fontcolor: str = "black",
     tick_fontsize: int | None = None,
+    color: str | None = "black",
     width: int | None = None,
     height: int | None = None,
     paper: str | None = None,
@@ -63,6 +64,8 @@ def plot_1d(
         yaxis_fontsize: Y-axis label font size.
         yaxis_fontcolor: Y-axis label font color.
         tick_fontsize: Tick label font size, or None for Plotly's default.
+        color: Line color (any Plotly-recognized color string, e.g.
+            "#1f77b4" or "blue").
         width: Figure width in pixels.
         height: Figure height in pixels.
         paper: Journal preset key from PAPER_PRESETS (e.g. "TASLP_single"),
@@ -93,7 +96,7 @@ def plot_1d(
     )
 
     fig = go.Figure()
-    fig.add_trace(build_line_trace(x, y, name))
+    fig.add_trace(build_line_trace(x, y, name, color=color))
     apply_layout(
         fig,
         title,
@@ -127,6 +130,9 @@ def plot_2d(
     yaxis_fontsize: int = 16,
     yaxis_fontcolor: str = "black",
     tick_fontsize: int | None = None,
+    colorscale: str = "Cividis",
+    zmin: float | None = None,
+    zmax: float | None = None,
     width: int | None = None,
     height: int | None = None,
     paper: str | None = None,
@@ -154,6 +160,14 @@ def plot_2d(
         yaxis_fontsize: Y-axis label font size.
         yaxis_fontcolor: Y-axis label font color.
         tick_fontsize: Tick label font size, or None for Plotly's default.
+        colorscale: Plotly heatmap colorscale name (e.g. "Cividis" for
+            sequential data, or a diverging one like "PuOr" for data centered
+            at zero — pair a diverging colorscale with fixed zmin/zmax).
+        zmin: Lower bound of the color range, or None for Plotly's
+            auto-range. Set explicitly (e.g. -1) alongside a diverging
+            colorscale so zero always maps to the same color.
+        zmax: Upper bound of the color range, or None for Plotly's
+            auto-range.
         width: Figure width in pixels.
         height: Figure height in pixels.
         paper: Journal preset key from PAPER_PRESETS, or None. See plot_1d
@@ -182,7 +196,9 @@ def plot_2d(
     )
 
     fig = go.Figure()
-    fig.add_trace(build_heatmap_trace(x, y, z, name))
+    fig.add_trace(
+        build_heatmap_trace(x, y, z, name, colorscale=colorscale, zmin=zmin, zmax=zmax)
+    )
     apply_layout(
         fig,
         title,
@@ -356,7 +372,8 @@ def plot_multi(
     show: bool = True,
     download: bool = False,
     download_fpath: str | list[str] | None = None,
-) -> None:
+    return_fig: bool = False,
+) -> go.Figure | None:
     """Plot a grid of 1D, 2D, and/or 3D panels as subplots.
 
     Args:
@@ -364,9 +381,17 @@ def plot_multi(
             the (rows, cols) grid. Each dict has a "kind" of "1d", "2d", or
             "3d" plus that kind's data/labels:
                 1d: {"kind": "1d", "x", "y", "name", "xaxis_title",
-                     "yaxis_title"}
+                     "yaxis_title", "color"}. "color" defaults to "black"
+                     (matching build_line_trace) if omitted.
                 2d: {"kind": "2d", "x", "y", "z", "name", "xaxis_title",
-                     "yaxis_title"}
+                     "yaxis_title", "colorscale", "zmin", "zmax"}.
+                     "colorscale" defaults to "Cividis"; "zmin"/"zmax"
+                     default to None (Plotly auto-ranges) if omitted,
+                     matching build_heatmap_trace's defaults. Set an explicit
+                     "colorscale" (e.g. a colorblind-safe diverging one, see
+                     paper_presets.DIVERGING_COLORSCALE_COLORBLIND_SAFE) plus
+                     fixed "zmin"/"zmax" per-panel to mix e.g. a sequential
+                     heatmap and a diverging heatmap in the same grid.
                 3d: {"kind": "3d", "x", "y", "z", "name", "xaxis_title",
                      "yaxis_title", "zaxis_title", "showscale"}. "showscale"
                      defaults to False since a full-size colorbar per 3D
@@ -400,6 +425,15 @@ def plot_multi(
             to save the same figure in multiple formats at once (e.g. one
             ".pdf" and one ".html"). Format is inferred per-path from its
             extension.
+        return_fig: If True, skip fig.show()/download and return the built
+            go.Figure instead, so the caller can post-process it (e.g. add
+            row-label annotations via fig.add_annotation, or per-panel tick
+            overrides via fig.update_yaxes(row=,col=,tickvals=,ticktext=))
+            before saving it themselves. Defaults to False, matching every
+            other plot_* function's auto show/save behavior.
+
+    Returns:
+        The built go.Figure if return_fig=True, else None.
     """
     style = resolve_style(
         paper,
@@ -443,7 +477,12 @@ def plot_multi(
         row, col = row + 1, col + 1
         kind = panel["kind"]
         if kind == "1d":
-            trace = build_line_trace(panel["x"], panel["y"], panel.get("name", ""))
+            trace = build_line_trace(
+                panel["x"],
+                panel["y"],
+                panel.get("name", ""),
+                color=panel.get("color", "black"),
+            )
             fig.add_trace(trace, row=row, col=col)
             fig.update_xaxes(
                 title_text=panel.get("xaxis_title"),
@@ -469,7 +508,10 @@ def plot_multi(
                 panel["y"],
                 panel["z"],
                 panel.get("name", ""),
+                colorscale=panel.get("colorscale", "Cividis"),
                 colorbar=colorbar,
+                zmin=panel.get("zmin"),
+                zmax=panel.get("zmax"),
             )
             fig.add_trace(trace, row=row, col=col)
             fig.update_xaxes(
@@ -522,7 +564,11 @@ def plot_multi(
         height=style["height"],
     )
 
+    if return_fig:
+        return fig
+
     finalise_figure(fig, show, download, download_fpath)
+    return None
 
 
 def plot_1d_multi(

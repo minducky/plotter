@@ -26,7 +26,10 @@ def download_figure(fig: go.Figure, download_fpath: str) -> None:
     """Save a figure to disk, choosing the writer by file extension.
 
     ".html" writes an interactive HTML file; any other extension (e.g.
-    ".pdf", ".png", ".svg") is written as a static image via Kaleido.
+    ".pdf", ".png", ".svg") is written as a static image via Kaleido, at its
+    default scale=1 so the exported page's physical size matches `width`/
+    `height` (see paper_presets._KALEIDO_REFERENCE_DPI for why `scale` isn't
+    used here to raise raster quality).
 
     Args:
         fig: Figure to save.

@@ -225,6 +225,9 @@ def plot_3d(
     xlim: tuple[float, float] | None = None,
     ylim: tuple[float, float] | None = None,
     zlim: tuple[float, float] | None = None,
+    elev: float | None = None,
+    azim: float | None = None,
+    roll: float | None = None,
     colorscale: str = "cividis",
     show_colorbar: bool = True,
     width: float | None = None,
@@ -253,6 +256,13 @@ def plot_3d(
         xlim: (min, max) x-axis range, or None for matplotlib's auto-range.
         ylim: (min, max) y-axis range, or None for matplotlib's auto-range.
         zlim: (min, max) z-axis range, or None for matplotlib's auto-range.
+        elev: Camera elevation angle in degrees, or None for matplotlib's
+            default (30).
+        azim: Camera azimuth angle in degrees, or None for matplotlib's
+            default (-60). Controls which axis reads left-to-right --
+            e.g. azim=-90 puts x front-to-back and y left-to-right.
+        roll: Camera roll angle in degrees, or None for matplotlib's
+            default (0).
         colorscale: matplotlib colormap name.
         show_colorbar: Whether to draw the surface's color scale bar.
         width: Figure width in inches.
@@ -283,6 +293,7 @@ def plot_3d(
         colorscale=colorscale, show_colorbar=show_colorbar,
         xaxis_title=xaxis_title, yaxis_title=yaxis_title, zaxis_title=zaxis_title,
         xlim=xlim, ylim=ylim, zlim=zlim,
+        elev=elev, azim=azim, roll=roll,
     )
     if title:
         ax.set_title(title, fontsize=style["title_fontsize"], fontfamily=style["font"])
@@ -341,10 +352,14 @@ def plot_multi(
                      without numeric tick labels.
                 3d: {"kind": "3d", "x", "y", "z", "name", "xaxis_title",
                      "yaxis_title", "zaxis_title", "colorscale",
-                     "show_colorbar", "xlim", "ylim", "zlim"}.
+                     "show_colorbar", "xlim", "ylim", "zlim", "elev",
+                     "azim", "roll"}.
                      "show_colorbar" defaults to False since a full-size
                      colorbar per 3D panel tends to crowd a multi-panel
                      grid; set it to True per-panel to opt back in.
+                     "elev"/"azim"/"roll" set the camera angle (degrees),
+                     each defaulting to matplotlib's own default (30/-60/0)
+                     if omitted -- see `plot_3d`'s docstring.
         rows: Number of subplot rows.
         cols: Number of subplot columns.
         title: Overall figure title.
@@ -433,6 +448,7 @@ def plot_multi(
                 yaxis_title=panel.get("yaxis_title"),
                 zaxis_title=panel.get("zaxis_title"),
                 xlim=panel.get("xlim"), ylim=panel.get("ylim"), zlim=panel.get("zlim"),
+                elev=panel.get("elev"), azim=panel.get("azim"), roll=panel.get("roll"),
             )
 
         name = panel.get("name")

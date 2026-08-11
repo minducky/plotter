@@ -307,6 +307,9 @@ def draw_3d(
     xlim: tuple[float, float] | None = None,
     ylim: tuple[float, float] | None = None,
     zlim: tuple[float, float] | None = None,
+    elev: float | None = None,
+    azim: float | None = None,
+    roll: float | None = None,
 ):
     """Draws a single 3D surface (+ optional colorbar) onto an existing 3D Axes.
 
@@ -330,6 +333,13 @@ def draw_3d(
         xlim: (min, max) x-axis range, or None for matplotlib's auto-range.
         ylim: (min, max) y-axis range, or None for matplotlib's auto-range.
         zlim: (min, max) z-axis range, or None for matplotlib's auto-range.
+        elev: Camera elevation angle in degrees, or None for matplotlib's
+            default (30).
+        azim: Camera azimuth angle in degrees, or None for matplotlib's
+            default (-60). Controls which axis reads left-to-right --
+            e.g. azim=-90 puts x front-to-back and y left-to-right.
+        roll: Camera roll angle in degrees, or None for matplotlib's
+            default (0).
 
     Returns:
         A (surf, cbar) tuple -- `surf` is the Poly3DCollection from
@@ -357,6 +367,8 @@ def draw_3d(
         ax.set_ylim(ylim)
     if zlim is not None:
         ax.set_zlim(zlim)
+    if elev is not None or azim is not None or roll is not None:
+        ax.view_init(elev=elev, azim=azim, roll=roll)
     return surf, cbar
 
 

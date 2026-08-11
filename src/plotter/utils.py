@@ -5,6 +5,7 @@ import warnings
 
 import matplotlib.figure
 import numpy as np
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 
 def to_numpy(data) -> np.ndarray:
@@ -89,6 +90,13 @@ def resolve_figsize(style: dict) -> tuple[float, float]:
     return width, height
 
 
+# 4.6%/4% isn't a matplotlib default (that's fraction=0.15, pad~0.05) -- it's
+# a widely-used community recipe for a slim colorbar matched to its plot's
+# height.
+COLORBAR_SIZE = "4.6%"
+COLORBAR_PAD = "4%"
+
+
 def add_colorbar(fig, im, ax, tick_fontsize: float | None = None, show_ticklabels: bool = True):
     """Adds a colorbar sized to match its target Axes' actual rendered height.
 
@@ -107,13 +115,47 @@ def add_colorbar(fig, im, ax, tick_fontsize: float | None = None, show_ticklabel
     Returns:
         The created Colorbar.
     """
-    cbar = fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
+    # `fig.colorbar(im, ax=ax, fraction=..., pad=...)` puts the colorbar's
+    # Axes under constrained_layout's own colorbar handling, which
+    # re-applies a fixed height:width box_aspect (default 20) on every
+    # draw/savefig pass -- so it silently overrides any position/aspect we
+    # set right after creation, and binds before `ax`'s actual height
+    # whenever `ax` is narrow relative to its height (e.g. a many-column
+    # grid), leaving the colorbar visibly shorter than `ax`. A divider-based
+    # cax instead gets its own locator that reads `ax`'s real rendered bbox
+    # on every draw, independent of constrained_layout's colorbar-specific
+    # aspect logic, so it tracks `ax`'s height exactly no matter how many
+    # more layout passes happen afterward.
+    divider = make_axes_locatable(ax)
+    cax = divider.append_axes("right", size=COLORBAR_SIZE, pad=COLORBAR_PAD)
+    cbar = fig.colorbar(im, cax=cax)
     cbar.outline.set_linewidth(0.5)
     if tick_fontsize is not None:
         cbar.ax.tick_params(labelsize=tick_fontsize)
     if not show_ticklabels:
         cbar.set_ticks([])
     return cbar
+
+
+def reserve_colorbar_space(ax, size: str = COLORBAR_SIZE, pad: str = COLORBAR_PAD) -> None:
+    """Shrinks `ax` by the same amount `add_colorbar` would, without drawing
+    a colorbar there.
+
+    For a multi-row grid where only some rows' panels get a colorbar (e.g.
+    one shared scale shown once), the panels that skip it would otherwise
+    stay full-width while their siblings shrink to make room -- misaligning
+    anything meant to share a scale, like a time axis. Call this on the
+    panels that don't get their own colorbar, so every panel in the group
+    ends up the same width.
+
+    Args:
+        ax: The Axes to reserve (and hide) colorbar-shaped space on.
+        size: Width to reserve, as a percentage string. Defaults to
+            `COLORBAR_SIZE`, matching `add_colorbar`.
+        pad: Gap before the reserved space, as a percentage string. Defaults
+            to `COLORBAR_PAD`, matching `add_colorbar`.
+    """
+    make_axes_locatable(ax).append_axes("right", size=size, pad=pad).axis("off")
 
 
 def apply_ticks(
@@ -372,70 +414,6 @@ def draw_3d(
     return surf, cbar
 
 
-def reserve_left_margin(fig: matplotlib.figure.Figure, margin: float = 0.08) -> None:
-    """Reserves figure-fraction space on the left, inside the figure's own
-    bounds, for row labels added via `add_row_label`.
-
-    Without this, a row label placed at a negative figure-fraction x sits
-    outside the figure's own canvas -- fine as long as you save with
-    `bbox_inches='tight'`, except tight-bbox then *expands the saved page*
-    to include it, silently breaking the exact physical page size a `paper=`
-    preset promised. Reserving margin up front keeps the label (and the
-    save) inside the original `figsize`, so `bbox_inches='tight'` never
-    needs to grow the canvas.
-
-    Only has an effect when the figure uses matplotlib's constrained-layout
-    engine (i.e. was created with `constrained_layout=True`); harmless
-    no-op otherwise. Safe to call more than once (idempotent for the same
-    `margin`).
-
-    Args:
-        fig: Figure to reserve margin on.
-        margin: Fraction of the figure width to reserve on the left.
-    """
-    engine = fig.get_layout_engine()
-    if engine is not None and hasattr(engine, "set"):
-        engine.set(rect=(margin, 0, 1 - margin, 1))
-
-
-def add_row_label(
-    fig: matplotlib.figure.Figure,
-    ax,
-    label: str,
-    x: float = 0.02,
-    fontsize: float = 9,
-    fontfamily: str | None = None,
-) -> None:
-    """Adds a vertically-centered row-label (e.g. "Left"/"Right"), aligned
-    to `ax`'s actual rendered vertical extent.
-
-    Forces a layout pass first (harmless if one already ran, e.g. via
-    `constrained_layout=True`) so `ax.get_position()` reflects where the
-    Axes really ends up -- unlike a domain fraction read before layout,
-    this can't drift out of sync with the final render. Call
-    `reserve_left_margin` first so `x` (a small positive fraction) lands in
-    space actually set aside for it, rather than needing a tight-bbox
-    canvas expansion to avoid clipping.
-
-    Args:
-        fig: The figure `ax` belongs to.
-        ax: The Axes to vertically center the label on.
-        label: Text to show, rotated 90 degrees.
-        x: Figure-fraction x position. Small and positive, meant to sit
-            inside the margin reserved by `reserve_left_margin`.
-        fontsize: Label font size (points).
-        fontfamily: Label font family, or None for matplotlib's current
-            rcParams default.
-    """
-    fig.canvas.draw()
-    pos = ax.get_position()
-    y_center = (pos.y0 + pos.y1) / 2
-    kwargs = dict(fontsize=fontsize)
-    if fontfamily:
-        kwargs["fontfamily"] = fontfamily
-    fig.text(x, y_center, label, rotation=90, va="center", ha="center", fontweight="bold", **kwargs)
-
-
 SAVE_DPI = 1200  # resolution for rasterized content (imshow heatmaps) embedded
 # in a saved PDF/PNG/SVG. Vector content (lines, text, axes) is unaffected
 # by this -- it's only the raster images that get sampled at this density.
@@ -456,8 +434,8 @@ def save_figure(fig: matplotlib.figure.Figure, download_fpath: str, dpi: int | N
     ".pdf"/".png"/".svg" are written via `fig.savefig(..., dpi=dpi or
     SAVE_DPI)` with NO `bbox_inches='tight'` -- every figure this package
     builds uses `constrained_layout=True`, which already keeps titles/
-    labels/colorbars/row-label text (see `reserve_left_margin`) within the
-    figure's own bounds, so the saved page is always *exactly* `figsize`
+    labels/colorbars within the figure's own bounds, so the saved page is
+    always *exactly* `figsize`
     with no renderer-specific DPI conversion to get wrong (unlike the old
     Plotly/Kaleido implementation) and no tight-bbox cropping/expansion to
     make it inexact. ".html" has no first-class matplotlib equivalent to

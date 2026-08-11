@@ -402,11 +402,10 @@ def plot_multi(
             to save the same figure in multiple formats at once. Format is
             inferred per-path from its extension.
         return_fig: If True, skip show/download and return the built
-            `Figure` instead, so the caller can post-process it (e.g. add
-            row-label text via `utils.add_row_label`, or tweak an axes'
-            ticks directly via `fig.axes[i]`) before saving it themselves.
-            Defaults to False (auto show/save, matching every other plot_*
-            function's behavior).
+            `Figure` instead, so the caller can post-process it (e.g. tweak
+            an axes' ticks directly via `fig.axes[i]`) before saving it
+            themselves. Defaults to False (auto show/save, matching every
+            other plot_* function's behavior).
 
     Returns:
         The built matplotlib Figure if return_fig=True, else None.

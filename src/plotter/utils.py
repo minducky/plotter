@@ -64,14 +64,11 @@ def style_axes(
         grid: Whether to draw a light gridline behind the data.
     """
     font = style.get("font")
+    axis_fontsize = style.get("axis_fontsize")
     if xaxis_title:
-        ax.set_xlabel(
-            xaxis_title, fontsize=style.get("xaxis_fontsize"), fontfamily=font
-        )
+        ax.set_xlabel(xaxis_title, fontsize=axis_fontsize, fontfamily=font)
     if yaxis_title:
-        ax.set_ylabel(
-            yaxis_title, fontsize=style.get("yaxis_fontsize"), fontfamily=font
-        )
+        ax.set_ylabel(yaxis_title, fontsize=axis_fontsize, fontfamily=font)
     tick_fontsize = style.get("tick_fontsize")
     ax.tick_params(direction="out", length=2, width=0.5, labelsize=tick_fontsize)
     for spine in ax.spines.values():
@@ -231,6 +228,17 @@ def draw_2d(
     Shared by `plot_2d` (its own Axes), `plot_multi` (an Axes from a grid),
     and `plot_confusion_matrix` (no x/y coordinates, just pixel indices).
 
+    `interpolation="nearest"` is deliberate: imshow's default resampling
+    (rcParams `image.interpolation`, "antialiased" on recent matplotlib)
+    blends adjacent data cells together when the rendered raster resolution
+    doesn't line up with `z`'s own resolution -- which for a cochleagram
+    (tens of thousands of time samples squeezed into a couple inches) it
+    essentially never does. That blending is what made zoomed-in PDFs look
+    soft/merged instead of showing crisp per-cell structure the way the
+    package's previous Plotly backend did. "nearest" keeps whatever cells
+    do get rendered sharp, and pairs with `save_figure`'s higher DPI to
+    retain as much of that per-cell detail as practical.
+
     Args:
         fig: Figure `ax` belongs to (needed to attach the colorbar).
         ax: Axes to draw onto.
@@ -266,7 +274,7 @@ def draw_2d(
         extent = [x_arr[0], x_arr[-1], y_arr[0], y_arr[-1]]
     im = ax.imshow(
         z_arr, extent=extent, cmap=colorscale, vmin=zmin, vmax=zmax,
-        origin=origin, aspect="auto",
+        origin=origin, aspect="auto", interpolation="nearest",
     )
     cbar = None
     if show_colorbar:
@@ -294,11 +302,8 @@ def draw_3d(
     colorscale: str = "cividis",
     show_colorbar: bool = True,
     xaxis_title: str | None = None,
-    xaxis_fontsize: int = 16,
     yaxis_title: str | None = None,
-    yaxis_fontsize: int = 16,
     zaxis_title: str | None = None,
-    zaxis_fontsize: int = 16,
     xlim: tuple[float, float] | None = None,
     ylim: tuple[float, float] | None = None,
     zlim: tuple[float, float] | None = None,
@@ -306,27 +311,22 @@ def draw_3d(
     """Draws a single 3D surface (+ optional colorbar) onto an existing 3D Axes.
 
     Shared by `plot_3d` (its own Axes) and `plot_multi` (an Axes from a
-    grid). Each axis label uses its own fontsize, sourced directly from the
-    args rather than `style` -- paper presets don't define zaxis sizing (see
-    `plot_3d`'s docstring), so x/y/z all stay consistent by being handled
-    the same way here.
+    grid). All three axis labels share one `style["axis_fontsize"]`, same as
+    `style_axes` does for the x/y axes of 1D/2D plots.
 
     Args:
         fig: Figure `ax` belongs to (needed to attach the colorbar).
         ax: 3D Axes to draw onto.
-        style: A dict from `resolve_style`; only `font` and `tick_fontsize`
-            are used here.
+        style: A dict from `resolve_style`; `font`, `axis_fontsize`, and
+            `tick_fontsize` are used here.
         x: X-axis coordinates, shape (Nx,).
         y: Y-axis coordinates, shape (Ny,).
         z: 2D array of surface heights, shape (Ny, Nx).
         colorscale: matplotlib colormap name.
         show_colorbar: Whether to draw the surface's color scale bar.
         xaxis_title: X-axis label, or None to leave unset.
-        xaxis_fontsize: X-axis label font size (points).
         yaxis_title: Y-axis label, or None to leave unset.
-        yaxis_fontsize: Y-axis label font size (points).
         zaxis_title: Z-axis label, or None to leave unset.
-        zaxis_fontsize: Z-axis label font size (points).
         xlim: (min, max) x-axis range, or None for matplotlib's auto-range.
         ylim: (min, max) y-axis range, or None for matplotlib's auto-range.
         zlim: (min, max) z-axis range, or None for matplotlib's auto-range.
@@ -342,12 +342,13 @@ def draw_3d(
     if show_colorbar:
         cbar = add_colorbar(fig, surf, ax, tick_fontsize=style.get("tick_fontsize"))
     font = style.get("font")
+    axis_fontsize = style.get("axis_fontsize")
     if xaxis_title:
-        ax.set_xlabel(xaxis_title, fontsize=xaxis_fontsize, fontfamily=font)
+        ax.set_xlabel(xaxis_title, fontsize=axis_fontsize, fontfamily=font)
     if yaxis_title:
-        ax.set_ylabel(yaxis_title, fontsize=yaxis_fontsize, fontfamily=font)
+        ax.set_ylabel(yaxis_title, fontsize=axis_fontsize, fontfamily=font)
     if zaxis_title:
-        ax.set_zlabel(zaxis_title, fontsize=zaxis_fontsize, fontfamily=font)
+        ax.set_zlabel(zaxis_title, fontsize=axis_fontsize, fontfamily=font)
     if style.get("tick_fontsize") is not None:
         ax.tick_params(labelsize=style["tick_fontsize"])
     if xlim is not None:
@@ -423,11 +424,20 @@ def add_row_label(
     fig.text(x, y_center, label, rotation=90, va="center", ha="center", fontweight="bold", **kwargs)
 
 
+SAVE_DPI = 600  # resolution for rasterized content (imshow heatmaps) embedded
+# in a saved PDF/PNG/SVG. Vector content (lines, text, axes) is unaffected
+# by this -- it's only the raster images that get sampled at this density.
+# 300 looked visibly softer/blockier than the old Plotly backend when
+# zoomed in on a heatmap panel; 600 is a practical middle ground between
+# that and the (impractically large) DPI needed to embed a cochleagram's
+# full native sample-rate resolution.
+
+
 def save_figure(fig: matplotlib.figure.Figure, download_fpath: str) -> None:
     """Save a figure to disk, choosing the writer by file extension.
 
-    ".pdf"/".png"/".svg" are written via `fig.savefig(..., dpi=300)` with NO
-    `bbox_inches='tight'` -- every figure this package builds uses
+    ".pdf"/".png"/".svg" are written via `fig.savefig(..., dpi=SAVE_DPI)`
+    with NO `bbox_inches='tight'` -- every figure this package builds uses
     `constrained_layout=True`, which already keeps titles/labels/colorbars/
     row-label text (see `reserve_left_margin`) within the figure's own
     bounds, so the saved page is always *exactly* `figsize` with no
@@ -449,7 +459,7 @@ def save_figure(fig: matplotlib.figure.Figure, download_fpath: str) -> None:
             stacklevel=2,
         )
         return
-    fig.savefig(download_fpath, dpi=300)
+    fig.savefig(download_fpath, dpi=SAVE_DPI)
 
 
 def save_figure_multi(fig: matplotlib.figure.Figure, download_fpaths: list[str]) -> None:

@@ -30,9 +30,8 @@ def plot_1d(
     font: str = "Arial",
     title_fontsize: int = 24,
     xaxis_title: str | None = None,
-    xaxis_fontsize: int = 16,
     yaxis_title: str | None = None,
-    yaxis_fontsize: int = 16,
+    axis_fontsize: int = 16,
     tick_fontsize: int | None = None,
     xticks=None,
     xticklabels=None,
@@ -58,9 +57,8 @@ def plot_1d(
         font: Font family for the title and axis labels.
         title_fontsize: Title font size (points).
         xaxis_title: X-axis label.
-        xaxis_fontsize: X-axis label font size (points).
         yaxis_title: Y-axis label.
-        yaxis_fontsize: Y-axis label font size (points).
+        axis_fontsize: X/Y axis label font size (points), shared by both.
         tick_fontsize: Tick label font size (points), or None for
             matplotlib's default.
         xticks: X-axis tick positions, or None for matplotlib's default.
@@ -91,8 +89,7 @@ def plot_1d(
         paper,
         font=font,
         title_fontsize=title_fontsize,
-        xaxis_fontsize=xaxis_fontsize,
-        yaxis_fontsize=yaxis_fontsize,
+        axis_fontsize=axis_fontsize,
         tick_fontsize=tick_fontsize,
         width=width,
         height=height,
@@ -121,9 +118,8 @@ def plot_2d(
     font: str = "Arial",
     title_fontsize: int = 24,
     xaxis_title: str | None = None,
-    xaxis_fontsize: int = 16,
     yaxis_title: str | None = None,
-    yaxis_fontsize: int = 16,
+    axis_fontsize: int = 16,
     tick_fontsize: int | None = None,
     xticks=None,
     xticklabels=None,
@@ -153,9 +149,8 @@ def plot_2d(
         font: Font family for the title and axis labels.
         title_fontsize: Title font size (points).
         xaxis_title: X-axis label.
-        xaxis_fontsize: X-axis label font size (points).
         yaxis_title: Y-axis label.
-        yaxis_fontsize: Y-axis label font size (points).
+        axis_fontsize: X/Y axis label font size (points), shared by both.
         tick_fontsize: Tick label font size (points), or None for
             matplotlib's default.
         xticks: X-axis tick positions, or None for matplotlib's default.
@@ -190,8 +185,7 @@ def plot_2d(
         paper,
         font=font,
         title_fontsize=title_fontsize,
-        xaxis_fontsize=xaxis_fontsize,
-        yaxis_fontsize=yaxis_fontsize,
+        axis_fontsize=axis_fontsize,
         tick_fontsize=tick_fontsize,
         width=width,
         height=height,
@@ -224,11 +218,9 @@ def plot_3d(
     font: str = "Arial",
     title_fontsize: int = 24,
     xaxis_title: str | None = None,
-    xaxis_fontsize: int = 16,
     yaxis_title: str | None = None,
-    yaxis_fontsize: int = 16,
     zaxis_title: str | None = None,
-    zaxis_fontsize: int = 16,
+    axis_fontsize: int = 16,
     tick_fontsize: int | None = None,
     xlim: tuple[float, float] | None = None,
     ylim: tuple[float, float] | None = None,
@@ -252,11 +244,10 @@ def plot_3d(
         font: Font family for the title and axis labels.
         title_fontsize: Title font size (points).
         xaxis_title: X-axis label.
-        xaxis_fontsize: X-axis label font size (points).
         yaxis_title: Y-axis label.
-        yaxis_fontsize: Y-axis label font size (points).
         zaxis_title: Z-axis label.
-        zaxis_fontsize: Z-axis label font size (points).
+        axis_fontsize: X/Y/Z axis label font size (points), shared by all
+            three.
         tick_fontsize: Tick label font size for all three axes (points), or
             None for matplotlib's default.
         xlim: (min, max) x-axis range, or None for matplotlib's auto-range.
@@ -268,8 +259,6 @@ def plot_3d(
         height: Figure height in inches.
         paper: Journal preset key from PAPER_PRESETS, or None. See plot_1d
             for how paper presets interact with the explicit style args.
-            Paper presets only define x/y-axis font size; zaxis_fontsize is
-            never overridden by a preset.
         interactive: Whether to call `plt.show()`. See plot_1d.
         download: Whether to also save the figure to disk.
         download_fpath: Output path when download=True, or a list of paths
@@ -280,8 +269,7 @@ def plot_3d(
         paper,
         font=font,
         title_fontsize=title_fontsize,
-        xaxis_fontsize=xaxis_fontsize,
-        yaxis_fontsize=yaxis_fontsize,
+        axis_fontsize=axis_fontsize,
         tick_fontsize=tick_fontsize,
         width=width,
         height=height,
@@ -293,9 +281,7 @@ def plot_3d(
     draw_3d(
         fig, ax, style, x, y, z,
         colorscale=colorscale, show_colorbar=show_colorbar,
-        xaxis_title=xaxis_title, xaxis_fontsize=xaxis_fontsize,
-        yaxis_title=yaxis_title, yaxis_fontsize=yaxis_fontsize,
-        zaxis_title=zaxis_title, zaxis_fontsize=zaxis_fontsize,
+        xaxis_title=xaxis_title, yaxis_title=yaxis_title, zaxis_title=zaxis_title,
         xlim=xlim, ylim=ylim, zlim=zlim,
     )
     if title:
@@ -314,6 +300,8 @@ def plot_multi(
     title: str | None = None,
     font: str = "Arial",
     title_fontsize: int = 24,
+    subplot_title_fontsize: int = 16,
+    axis_fontsize: int = 16,
     tick_fontsize: int | None = None,
     width: float | None = None,
     height: float | None = None,
@@ -329,7 +317,7 @@ def plot_multi(
 
     Draws each panel with the same `draw_1d`/`draw_2d`/`draw_3d` helpers
     used by the single-panel `plot_1d`/`plot_2d`/`plot_3d` functions, so
-    panel behavior (ticks, limits, colorbar sizing, per-axis fonts) stays
+    panel behavior (ticks, limits, colorbar sizing, axis fonts) stays
     consistent with the single-plot versions.
 
     Args:
@@ -341,7 +329,7 @@ def plot_multi(
                      "xticklabels", "yticks", "yticklabels", "xlim", "ylim"}.
                      "color" defaults to "black" and "line_width" to 1 if
                      omitted. "name" (if truthy) becomes that panel's own
-                     title, drawn above it.
+                     title, drawn above it at `subplot_title_fontsize`.
                 2d: {"kind": "2d", "x", "y", "z", "name", "xaxis_title",
                      "yaxis_title", "colorscale", "zmin", "zmax",
                      "show_colorbar", "colorbar_showticklabels", "xticks",
@@ -354,11 +342,8 @@ def plot_multi(
                      defaults to True; set False to show the gradient
                      without numeric tick labels.
                 3d: {"kind": "3d", "x", "y", "z", "name", "xaxis_title",
-                     "xaxis_fontsize", "yaxis_title", "yaxis_fontsize",
-                     "zaxis_title", "zaxis_fontsize", "colorscale",
-                     "show_colorbar", "xlim", "ylim", "zlim"}. Each axis's
-                     fontsize defaults to 16 independently -- unlike labels
-                     themselves, these are not shared across panels.
+                     "yaxis_title", "zaxis_title", "colorscale",
+                     "show_colorbar", "xlim", "ylim", "zlim"}.
                      "show_colorbar" defaults to False since a full-size
                      colorbar per 3D panel tends to crowd a multi-panel
                      grid; set it to True per-panel to opt back in.
@@ -366,7 +351,13 @@ def plot_multi(
         cols: Number of subplot columns.
         title: Overall figure title.
         font: Font family for the title and axis labels.
-        title_fontsize: Title font size (points).
+        title_fontsize: Overall figure title font size (points).
+        subplot_title_fontsize: Per-panel title font size (points), for
+            panels with a truthy "name". Separate from `title_fontsize` so
+            panel titles can be sized independently from the overall figure
+            title.
+        axis_fontsize: Axis label font size (points), shared by every
+            panel's x/y (and z, for 3D panels) labels.
         tick_fontsize: Tick label font size for every panel (points), or
             None for matplotlib's default.
         width: Figure width in inches.
@@ -395,8 +386,7 @@ def plot_multi(
         paper,
         font=font,
         title_fontsize=title_fontsize,
-        xaxis_fontsize=16,
-        yaxis_fontsize=16,
+        axis_fontsize=axis_fontsize,
         tick_fontsize=tick_fontsize,
         width=width,
         height=height,
@@ -445,18 +435,15 @@ def plot_multi(
                 colorscale=panel.get("colorscale", "cividis"),
                 show_colorbar=panel.get("show_colorbar", False),
                 xaxis_title=panel.get("xaxis_title"),
-                xaxis_fontsize=panel.get("xaxis_fontsize", 16),
                 yaxis_title=panel.get("yaxis_title"),
-                yaxis_fontsize=panel.get("yaxis_fontsize", 16),
                 zaxis_title=panel.get("zaxis_title"),
-                zaxis_fontsize=panel.get("zaxis_fontsize", 16),
                 xlim=panel.get("xlim"), ylim=panel.get("ylim"), zlim=panel.get("zlim"),
             )
 
         name = panel.get("name")
         if name:
             ax.set_title(
-                name, fontsize=style["title_fontsize"], fontfamily=style["font"]
+                name, fontsize=subplot_title_fontsize, fontfamily=style["font"]
             )
 
     if link_x:
@@ -486,9 +473,8 @@ def plot_1d_multi(
     font: str = "Arial",
     title_fontsize: int = 24,
     xaxis_title: str | None = None,
-    xaxis_fontsize: int = 16,
     yaxis_title: str | None = None,
-    yaxis_fontsize: int = 16,
+    axis_fontsize: int = 16,
     tick_fontsize: int | None = None,
     xticks=None,
     xticklabels=None,
@@ -514,9 +500,8 @@ def plot_1d_multi(
         font: Font family for the title and axis labels.
         title_fontsize: Title font size (points).
         xaxis_title: X-axis label.
-        xaxis_fontsize: X-axis label font size (points).
         yaxis_title: Y-axis label.
-        yaxis_fontsize: Y-axis label font size (points).
+        axis_fontsize: X/Y axis label font size (points), shared by both.
         tick_fontsize: Tick label font size (points), or None for
             matplotlib's default.
         xticks: X-axis tick positions, or None for matplotlib's default.
@@ -541,8 +526,7 @@ def plot_1d_multi(
         paper,
         font=font,
         title_fontsize=title_fontsize,
-        xaxis_fontsize=xaxis_fontsize,
-        yaxis_fontsize=yaxis_fontsize,
+        axis_fontsize=axis_fontsize,
         tick_fontsize=tick_fontsize,
         width=width,
         height=height,
@@ -573,9 +557,8 @@ def plot_violin(
     font: str = "Arial",
     title_fontsize: int = 24,
     xaxis_title: str | None = None,
-    xaxis_fontsize: int = 16,
     yaxis_title: str | None = None,
-    yaxis_fontsize: int = 16,
+    axis_fontsize: int = 16,
     tick_fontsize: int | None = None,
     width: float | None = None,
     height: float | None = None,
@@ -594,9 +577,8 @@ def plot_violin(
         font: Font family for the title and axis labels.
         title_fontsize: Title font size (points).
         xaxis_title: X-axis label.
-        xaxis_fontsize: X-axis label font size (points).
         yaxis_title: Y-axis label.
-        yaxis_fontsize: Y-axis label font size (points).
+        axis_fontsize: X/Y axis label font size (points), shared by both.
         tick_fontsize: Tick label font size (points), or None for
             matplotlib's default.
         width: Figure width in inches.
@@ -616,8 +598,7 @@ def plot_violin(
         paper,
         font=font,
         title_fontsize=title_fontsize,
-        xaxis_fontsize=xaxis_fontsize,
-        yaxis_fontsize=yaxis_fontsize,
+        axis_fontsize=axis_fontsize,
         tick_fontsize=tick_fontsize,
         width=width,
         height=height,
@@ -642,9 +623,8 @@ def plot_box(
     font: str = "Arial",
     title_fontsize: int = 24,
     xaxis_title: str | None = None,
-    xaxis_fontsize: int = 16,
     yaxis_title: str | None = None,
-    yaxis_fontsize: int = 16,
+    axis_fontsize: int = 16,
     tick_fontsize: int | None = None,
     width: float | None = None,
     height: float | None = None,
@@ -663,9 +643,8 @@ def plot_box(
         font: Font family for the title and axis labels.
         title_fontsize: Title font size (points).
         xaxis_title: X-axis label.
-        xaxis_fontsize: X-axis label font size (points).
         yaxis_title: Y-axis label.
-        yaxis_fontsize: Y-axis label font size (points).
+        axis_fontsize: X/Y axis label font size (points), shared by both.
         tick_fontsize: Tick label font size (points), or None for
             matplotlib's default.
         width: Figure width in inches.
@@ -685,8 +664,7 @@ def plot_box(
         paper,
         font=font,
         title_fontsize=title_fontsize,
-        xaxis_fontsize=xaxis_fontsize,
-        yaxis_fontsize=yaxis_fontsize,
+        axis_fontsize=axis_fontsize,
         tick_fontsize=tick_fontsize,
         width=width,
         height=height,
@@ -712,9 +690,8 @@ def plot_confusion_matrix(
     font: str | None = None,
     title_fontsize: int = 16,
     xaxis_title: str | None = "Predicted",
-    xaxis_fontsize: int = 16,
     yaxis_title: str | None = "True",
-    yaxis_fontsize: int = 16,
+    axis_fontsize: int = 16,
     tick_fontsize: int | None = None,
     width: float | None = None,
     height: float | None = None,
@@ -746,9 +723,8 @@ def plot_confusion_matrix(
             style it.
         title_fontsize: Title font size (points).
         xaxis_title: X-axis label.
-        xaxis_fontsize: X-axis label font size (points).
         yaxis_title: Y-axis label.
-        yaxis_fontsize: Y-axis label font size (points).
+        axis_fontsize: X/Y axis label font size (points), shared by both.
         tick_fontsize: Tick label font size (points), or None for
             matplotlib's default.
         width: Figure width in inches.
@@ -776,8 +752,7 @@ def plot_confusion_matrix(
         paper,
         font=font,
         title_fontsize=title_fontsize,
-        xaxis_fontsize=xaxis_fontsize,
-        yaxis_fontsize=yaxis_fontsize,
+        axis_fontsize=axis_fontsize,
         tick_fontsize=tick_fontsize,
         width=width,
         height=height,

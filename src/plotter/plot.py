@@ -306,8 +306,6 @@ def plot_multi(
     width: float | None = None,
     height: float | None = None,
     paper: str | None = None,
-    link_x: bool = False,
-    link_y: bool = False,
     interactive: bool = False,
     download: bool = False,
     download_fpath: str | list[str] | None = None,
@@ -364,9 +362,6 @@ def plot_multi(
         height: Figure height in inches.
         paper: Journal preset key from PAPER_PRESETS, or None. See plot_1d
             for how paper presets interact with the explicit style args.
-        link_x: If True, all 1D/2D panels share the same x-axis limits
-            (based on the last panel drawn). Has no effect on 3D panels.
-        link_y: If True, all 1D/2D panels share the same y-axis limits.
         interactive: Whether to call `plt.show()`. See plot_1d.
         download: Whether to also save the figure to disk.
         download_fpath: Output path when download=True, or a list of paths
@@ -445,17 +440,6 @@ def plot_multi(
             ax.set_title(
                 name, fontsize=subplot_title_fontsize, fontfamily=style["font"]
             )
-
-    if link_x:
-        ref = axes[0][0]
-        for ax in fig.axes:
-            if ax is not ref and ax.name != "3d":
-                ax.sharex(ref)
-    if link_y:
-        ref = axes[0][0]
-        for ax in fig.axes:
-            if ax is not ref and ax.name != "3d":
-                ax.sharey(ref)
 
     if title:
         fig.suptitle(title, fontsize=style["title_fontsize"], fontfamily=style["font"])

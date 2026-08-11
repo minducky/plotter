@@ -5,9 +5,9 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "plotter"
 version = "0.1.0"
-description = "Plotly-based plotting utilities: single-trace, multi-panel, and distribution plots with journal/paper style presets."
+description = "matplotlib-based plotting utilities: single-trace, multi-panel, and distribution plots with journal/paper style presets."
 requires-python = ">=3.11"
-dependencies = ["plotly>=5", "numpy>=1.24", "kaleido>=0.2"]
+dependencies = ["matplotlib>=3.8", "numpy>=1.24"]
 
 [tool.setuptools.packages.find]
 where = ["src"]

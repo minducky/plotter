@@ -29,16 +29,16 @@ def mm_to_inches(mm: float) -> float:
 PAPER_PRESETS: dict[str, dict] = {
     "TASLP_single": {
         "font_family": "Times New Roman",
-        "tick_fontsize": 7,
+        "tick_fontsize": 8,
         "label_fontsize": 8,
-        "title_fontsize": 9,
+        "title_fontsize": 8,
         "width_mm": 89,
     },
     "TASLP_double": {
         "font_family": "Times New Roman",
-        "tick_fontsize": 7,
+        "tick_fontsize": 8,
         "label_fontsize": 8,
-        "title_fontsize": 9,
+        "title_fontsize": 8,
         "width_mm": 182,
     },
     "Nature": {

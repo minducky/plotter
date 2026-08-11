@@ -40,7 +40,7 @@ def plot_1d(
     xlim: tuple[float, float] | None = None,
     ylim: tuple[float, float] | None = None,
     color: str | None = "black",
-    line_width: float = 1,
+    line_width: float = 0.3,
     width: float | None = None,
     height: float | None = None,
     paper: str | None = None,
@@ -355,7 +355,7 @@ def plot_multi(
                 1d: {"kind": "1d", "x", "y", "name", "xaxis_title",
                      "yaxis_title", "color", "line_width", "xticks",
                      "xticklabels", "yticks", "yticklabels", "xlim", "ylim"}.
-                     "color" defaults to "black" and "line_width" to 1 if
+                     "color" defaults to "black" and "line_width" to 0.3 if
                      omitted. "name" (if truthy) becomes that panel's own
                      title, drawn above it at `subplot_title_fontsize`.
                 2d: {"kind": "2d", "x", "y", "z", "name", "xaxis_title",
@@ -435,7 +435,7 @@ def plot_multi(
             draw_1d(
                 ax, style, panel["x"], panel["y"],
                 color=panel.get("color", "black"),
-                line_width=panel.get("line_width", 1),
+                line_width=panel.get("line_width", 0.3),
                 xaxis_title=panel.get("xaxis_title"),
                 yaxis_title=panel.get("yaxis_title"),
                 xticks=panel.get("xticks"), xticklabels=panel.get("xticklabels"),

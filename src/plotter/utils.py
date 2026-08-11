@@ -73,9 +73,9 @@ def style_axes(
     tick_fontsize = style.get("tick_fontsize")
     ax.tick_params(direction="out", length=2, width=0.5, labelsize=tick_fontsize)
     for spine in ax.spines.values():
-        spine.set_linewidth(0.8)
+        spine.set_linewidth(0.5)
     if grid:
-        ax.grid(True, color="lightgray", linewidth=0.5, zorder=0)
+        ax.grid(True, color="lightgray", linewidth=0.3, zorder=0)
         ax.set_axisbelow(True)
 
 
@@ -193,7 +193,7 @@ def draw_1d(
     x,
     y,
     color: str | None = "black",
-    line_width: float = 1,
+    line_width: float = 0.3,
     xaxis_title: str | None = None,
     yaxis_title: str | None = None,
     xticks=None,

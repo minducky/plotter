@@ -68,9 +68,9 @@ def resolve_style(paper: str | None, **explicit) -> dict:
 
     Args:
         paper: Key into PAPER_PRESETS, or None to use `explicit` as-is.
-        **explicit: title_font, title_fontsize, xaxis_font, xaxis_fontsize,
-            yaxis_font, yaxis_fontsize, tick_fontsize, width, height. `width`
-            and `height` are in inches (matplotlib figsize units).
+        **explicit: font, title_fontsize, xaxis_fontsize, yaxis_fontsize,
+            tick_fontsize, width, height. `width` and `height` are in
+            inches (matplotlib figsize units).
 
     Returns:
         Dict with the same keys as `explicit`, resolved.
@@ -79,11 +79,9 @@ def resolve_style(paper: str | None, **explicit) -> dict:
     if paper is not None:
         preset = PAPER_PRESETS[paper]
         resolved.update(
-            title_font=preset["font_family"],
+            font=preset["font_family"],
             title_fontsize=preset["title_fontsize"],
-            xaxis_font=preset["font_family"],
             xaxis_fontsize=preset["label_fontsize"],
-            yaxis_font=preset["font_family"],
             yaxis_fontsize=preset["label_fontsize"],
             tick_fontsize=preset["tick_fontsize"],
             width=mm_to_inches(preset["width_mm"]),

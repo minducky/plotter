@@ -18,7 +18,7 @@ from plotter import plot_1d
 
 x = np.linspace(0, 10, 200)
 y = np.sin(x)
-plot_1d(x, y, name="sin(x)", title="Example", xaxis_title="x", yaxis_title="y")
+plot_1d(x, y, title="Example", xaxis_title="x", yaxis_title="y")
 ```
 
 To pick up later changes:

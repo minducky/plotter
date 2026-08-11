@@ -31,11 +31,11 @@ def apply_paper_rcparams(style: dict) -> None:
     object individually (which Plotly required).
 
     Args:
-        style: A dict from `resolve_style`, at least containing `title_font`.
+        style: A dict from `resolve_style`, at least containing `font`.
     """
     import matplotlib.pyplot as plt
 
-    family = style.get("title_font")
+    family = style.get("font")
     if family is None:
         return
     plt.rcParams["font.family"] = "serif" if "Times" in family else "sans-serif"
@@ -63,10 +63,15 @@ def style_axes(
         yaxis_title: Y-axis label text, or None to leave unset.
         grid: Whether to draw a light gridline behind the data.
     """
+    font = style.get("font")
     if xaxis_title:
-        ax.set_xlabel(xaxis_title, fontsize=style.get("xaxis_fontsize"), fontfamily=style.get("xaxis_font"))
+        ax.set_xlabel(
+            xaxis_title, fontsize=style.get("xaxis_fontsize"), fontfamily=font
+        )
     if yaxis_title:
-        ax.set_ylabel(yaxis_title, fontsize=style.get("yaxis_fontsize"), fontfamily=style.get("yaxis_font"))
+        ax.set_ylabel(
+            yaxis_title, fontsize=style.get("yaxis_fontsize"), fontfamily=font
+        )
     tick_fontsize = style.get("tick_fontsize")
     ax.tick_params(direction="out", length=2, width=0.5, labelsize=tick_fontsize)
     for spine in ax.spines.values():
@@ -112,6 +117,246 @@ def add_colorbar(fig, im, ax, tick_fontsize: float | None = None, show_ticklabel
     if not show_ticklabels:
         cbar.set_ticks([])
     return cbar
+
+
+def apply_ticks(
+    ax,
+    xticks=None,
+    xticklabels=None,
+    yticks=None,
+    yticklabels=None,
+) -> None:
+    """Sets explicit tick positions/labels on an Axes, leaving matplotlib's
+    auto-generated ticks alone for whichever of the four args is None.
+
+    Args:
+        ax: Axes to set ticks on.
+        xticks: X-axis tick positions, or None to leave matplotlib's default.
+        xticklabels: X-axis tick labels (same length as xticks), or None to
+            show the tick values themselves.
+        yticks: Y-axis tick positions, or None to leave matplotlib's default.
+        yticklabels: Y-axis tick labels (same length as yticks), or None to
+            show the tick values themselves.
+    """
+    if xticks is not None:
+        ax.set_xticks(xticks)
+        if xticklabels is not None:
+            ax.set_xticklabels(xticklabels)
+    if yticks is not None:
+        ax.set_yticks(yticks)
+        if yticklabels is not None:
+            ax.set_yticklabels(yticklabels)
+
+
+def draw_1d(
+    ax,
+    style: dict,
+    x,
+    y,
+    color: str | None = "black",
+    line_width: float = 1,
+    xaxis_title: str | None = None,
+    yaxis_title: str | None = None,
+    xticks=None,
+    xticklabels=None,
+    yticks=None,
+    yticklabels=None,
+    xlim: tuple[float, float] | None = None,
+    ylim: tuple[float, float] | None = None,
+    label: str | None = None,
+):
+    """Draws a single 1D line onto an existing Axes.
+
+    Shared by `plot_1d` (its own Axes) and `plot_multi`/`plot_1d_multi`
+    (an Axes from a grid/shared figure), so tick/limit/labeling behavior
+    stays identical everywhere a line gets drawn.
+
+    Args:
+        ax: Axes to draw onto.
+        style: A dict from `resolve_style`.
+        x: X-axis values (numpy array or torch tensor).
+        y: Y-axis values (numpy array or torch tensor).
+        color: Line color.
+        line_width: Line width (points).
+        xaxis_title: X-axis label, or None to leave unset.
+        yaxis_title: Y-axis label, or None to leave unset.
+        xticks: X-axis tick positions, or None for matplotlib's default.
+        xticklabels: X-axis tick labels, or None to show tick values.
+        yticks: Y-axis tick positions, or None for matplotlib's default.
+        yticklabels: Y-axis tick labels, or None to show tick values.
+        xlim: (min, max) x-axis range, or None for matplotlib's auto-range.
+        ylim: (min, max) y-axis range, or None for matplotlib's auto-range.
+        label: Legend label for this line, or None. Caller is responsible
+            for calling `ax.legend()` if a legend should actually be shown.
+
+    Returns:
+        The Line2D created by `ax.plot`.
+    """
+    (line,) = ax.plot(
+        to_numpy(x), to_numpy(y), color=color, linewidth=line_width, label=label
+    )
+    style_axes(ax, style, xaxis_title=xaxis_title, yaxis_title=yaxis_title)
+    apply_ticks(ax, xticks, xticklabels, yticks, yticklabels)
+    if xlim is not None:
+        ax.set_xlim(xlim)
+    if ylim is not None:
+        ax.set_ylim(ylim)
+    return line
+
+
+def draw_2d(
+    fig,
+    ax,
+    style: dict,
+    z,
+    x=None,
+    y=None,
+    colorscale: str = "cividis",
+    zmin: float | None = None,
+    zmax: float | None = None,
+    show_colorbar: bool = True,
+    colorbar_showticklabels: bool = True,
+    origin: str = "lower",
+    xaxis_title: str | None = None,
+    yaxis_title: str | None = None,
+    xticks=None,
+    xticklabels=None,
+    yticks=None,
+    yticklabels=None,
+    xlim: tuple[float, float] | None = None,
+    ylim: tuple[float, float] | None = None,
+):
+    """Draws a single 2D heatmap (+ optional colorbar) onto an existing Axes.
+
+    Shared by `plot_2d` (its own Axes), `plot_multi` (an Axes from a grid),
+    and `plot_confusion_matrix` (no x/y coordinates, just pixel indices).
+
+    Args:
+        fig: Figure `ax` belongs to (needed to attach the colorbar).
+        ax: Axes to draw onto.
+        style: A dict from `resolve_style`.
+        z: 2D array of values to color-map (numpy array or torch tensor).
+        x: X-axis coordinates, or None to imshow by pixel index (no
+            `extent`) -- used by `plot_confusion_matrix`.
+        y: Y-axis coordinates, or None. Must be given iff `x` is given.
+        colorscale: matplotlib colormap name.
+        zmin: Lower bound of the color range, or None for auto-range.
+        zmax: Upper bound of the color range, or None for auto-range.
+        show_colorbar: Whether to draw a colorbar.
+        colorbar_showticklabels: Whether the colorbar shows numeric tick
+            labels (the gradient itself is always shown).
+        origin: "lower" (default) or "upper" -- passed straight to imshow.
+        xaxis_title: X-axis label, or None to leave unset.
+        yaxis_title: Y-axis label, or None to leave unset.
+        xticks: X-axis tick positions, or None for matplotlib's default.
+        xticklabels: X-axis tick labels, or None to show tick values.
+        yticks: Y-axis tick positions, or None for matplotlib's default.
+        yticklabels: Y-axis tick labels, or None to show tick values.
+        xlim: (min, max) x-axis range, or None for matplotlib's auto-range.
+        ylim: (min, max) y-axis range, or None for matplotlib's auto-range.
+
+    Returns:
+        A (im, cbar) tuple -- `im` is the AxesImage from imshow; `cbar` is
+        the created Colorbar, or None if show_colorbar=False.
+    """
+    z_arr = to_numpy(z)
+    extent = None
+    if x is not None:
+        x_arr, y_arr = to_numpy(x), to_numpy(y)
+        extent = [x_arr[0], x_arr[-1], y_arr[0], y_arr[-1]]
+    im = ax.imshow(
+        z_arr, extent=extent, cmap=colorscale, vmin=zmin, vmax=zmax,
+        origin=origin, aspect="auto",
+    )
+    cbar = None
+    if show_colorbar:
+        cbar = add_colorbar(
+            fig, im, ax,
+            tick_fontsize=style.get("tick_fontsize"),
+            show_ticklabels=colorbar_showticklabels,
+        )
+    style_axes(ax, style, xaxis_title=xaxis_title, yaxis_title=yaxis_title, grid=False)
+    apply_ticks(ax, xticks, xticklabels, yticks, yticklabels)
+    if xlim is not None:
+        ax.set_xlim(xlim)
+    if ylim is not None:
+        ax.set_ylim(ylim)
+    return im, cbar
+
+
+def draw_3d(
+    fig,
+    ax,
+    style: dict,
+    x,
+    y,
+    z,
+    colorscale: str = "cividis",
+    show_colorbar: bool = True,
+    xaxis_title: str | None = None,
+    xaxis_fontsize: int = 16,
+    yaxis_title: str | None = None,
+    yaxis_fontsize: int = 16,
+    zaxis_title: str | None = None,
+    zaxis_fontsize: int = 16,
+    xlim: tuple[float, float] | None = None,
+    ylim: tuple[float, float] | None = None,
+    zlim: tuple[float, float] | None = None,
+):
+    """Draws a single 3D surface (+ optional colorbar) onto an existing 3D Axes.
+
+    Shared by `plot_3d` (its own Axes) and `plot_multi` (an Axes from a
+    grid). Each axis label uses its own fontsize, sourced directly from the
+    args rather than `style` -- paper presets don't define zaxis sizing (see
+    `plot_3d`'s docstring), so x/y/z all stay consistent by being handled
+    the same way here.
+
+    Args:
+        fig: Figure `ax` belongs to (needed to attach the colorbar).
+        ax: 3D Axes to draw onto.
+        style: A dict from `resolve_style`; only `font` and `tick_fontsize`
+            are used here.
+        x: X-axis coordinates, shape (Nx,).
+        y: Y-axis coordinates, shape (Ny,).
+        z: 2D array of surface heights, shape (Ny, Nx).
+        colorscale: matplotlib colormap name.
+        show_colorbar: Whether to draw the surface's color scale bar.
+        xaxis_title: X-axis label, or None to leave unset.
+        xaxis_fontsize: X-axis label font size (points).
+        yaxis_title: Y-axis label, or None to leave unset.
+        yaxis_fontsize: Y-axis label font size (points).
+        zaxis_title: Z-axis label, or None to leave unset.
+        zaxis_fontsize: Z-axis label font size (points).
+        xlim: (min, max) x-axis range, or None for matplotlib's auto-range.
+        ylim: (min, max) y-axis range, or None for matplotlib's auto-range.
+        zlim: (min, max) z-axis range, or None for matplotlib's auto-range.
+
+    Returns:
+        A (surf, cbar) tuple -- `surf` is the Poly3DCollection from
+        plot_surface; `cbar` is the created Colorbar, or None if
+        show_colorbar=False.
+    """
+    xx, yy = np.meshgrid(to_numpy(x), to_numpy(y))
+    surf = ax.plot_surface(xx, yy, to_numpy(z), cmap=colorscale)
+    cbar = None
+    if show_colorbar:
+        cbar = add_colorbar(fig, surf, ax, tick_fontsize=style.get("tick_fontsize"))
+    font = style.get("font")
+    if xaxis_title:
+        ax.set_xlabel(xaxis_title, fontsize=xaxis_fontsize, fontfamily=font)
+    if yaxis_title:
+        ax.set_ylabel(yaxis_title, fontsize=yaxis_fontsize, fontfamily=font)
+    if zaxis_title:
+        ax.set_zlabel(zaxis_title, fontsize=zaxis_fontsize, fontfamily=font)
+    if style.get("tick_fontsize") is not None:
+        ax.tick_params(labelsize=style["tick_fontsize"])
+    if xlim is not None:
+        ax.set_xlim(xlim)
+    if ylim is not None:
+        ax.set_ylim(ylim)
+    if zlim is not None:
+        ax.set_zlim(zlim)
+    return surf, cbar
 
 
 def reserve_left_margin(fig: matplotlib.figure.Figure, margin: float = 0.08) -> None:

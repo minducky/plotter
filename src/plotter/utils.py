@@ -436,32 +436,44 @@ def add_row_label(
     fig.text(x, y_center, label, rotation=90, va="center", ha="center", fontweight="bold", **kwargs)
 
 
-SAVE_DPI = 600  # resolution for rasterized content (imshow heatmaps) embedded
+SAVE_DPI = 1200  # resolution for rasterized content (imshow heatmaps) embedded
 # in a saved PDF/PNG/SVG. Vector content (lines, text, axes) is unaffected
 # by this -- it's only the raster images that get sampled at this density.
-# 300 looked visibly softer/blockier than the old Plotly backend when
-# zoomed in on a heatmap panel; 600 is a practical middle ground between
-# that and the (impractically large) DPI needed to embed a cochleagram's
-# full native sample-rate resolution.
+# A cochleagram panel can hold tens of thousands of time samples in under an
+# inch of physical width, so no practical DPI embeds its full native
+# resolution (at this panel size, 1200 dpi still only captures ~1-2% of a
+# 44.1kHz signal's sample count -- confirmed by inspecting a rendered PDF's
+# embedded image XObject dimensions). 1200 is a user-chosen practical
+# ceiling: roughly 2x sharper than 600 without file size/render time
+# growing unreasonably. Pair with draw_2d's interpolation="nearest" (no
+# antialiasing) so whatever resolution IS embedded stays crisp rather than
+# blending into a soft/merged look.
 
 
-def save_figure(fig: matplotlib.figure.Figure, download_fpath: str) -> None:
+def save_figure(fig: matplotlib.figure.Figure, download_fpath: str, dpi: int | None = None) -> None:
     """Save a figure to disk, choosing the writer by file extension.
 
-    ".pdf"/".png"/".svg" are written via `fig.savefig(..., dpi=SAVE_DPI)`
-    with NO `bbox_inches='tight'` -- every figure this package builds uses
-    `constrained_layout=True`, which already keeps titles/labels/colorbars/
-    row-label text (see `reserve_left_margin`) within the figure's own
-    bounds, so the saved page is always *exactly* `figsize` with no
-    renderer-specific DPI conversion to get wrong (unlike the old Plotly/
-    Kaleido implementation) and no tight-bbox cropping/expansion to make it
-    inexact. ".html" has no first-class matplotlib equivalent to Plotly's
-    interactive export, so it's skipped with a warning rather than silently
-    doing nothing or raising.
+    ".pdf"/".png"/".svg" are written via `fig.savefig(..., dpi=dpi or
+    SAVE_DPI)` with NO `bbox_inches='tight'` -- every figure this package
+    builds uses `constrained_layout=True`, which already keeps titles/
+    labels/colorbars/row-label text (see `reserve_left_margin`) within the
+    figure's own bounds, so the saved page is always *exactly* `figsize`
+    with no renderer-specific DPI conversion to get wrong (unlike the old
+    Plotly/Kaleido implementation) and no tight-bbox cropping/expansion to
+    make it inexact. ".html" has no first-class matplotlib equivalent to
+    Plotly's interactive export, so it's skipped with a warning rather than
+    silently doing nothing or raising.
 
     Args:
         fig: Figure to save.
         download_fpath: Output path; its extension determines the format.
+        dpi: Override for `SAVE_DPI` on this save only, or None to use the
+            module default. Large raster content (e.g. a heatmap with
+            hundreds of cells per side, or a figure sized well beyond a
+            typical print page) can make `SAVE_DPI`'s 1200 produce an
+            enormous file -- pass a lower value in that case; see
+            `result_plotter.py`'s confusion-matrix sizing for a worked
+            example of scaling `dpi` down as content grows.
     """
     ext = os.path.splitext(download_fpath)[1].lower()
     if ext == ".html":
@@ -471,10 +483,12 @@ def save_figure(fig: matplotlib.figure.Figure, download_fpath: str) -> None:
             stacklevel=2,
         )
         return
-    fig.savefig(download_fpath, dpi=SAVE_DPI)
+    fig.savefig(download_fpath, dpi=dpi or SAVE_DPI)
 
 
-def save_figure_multi(fig: matplotlib.figure.Figure, download_fpaths: list[str]) -> None:
+def save_figure_multi(
+    fig: matplotlib.figure.Figure, download_fpaths: list[str], dpi: int | None = None
+) -> None:
     """Save a figure to multiple paths at once, format inferred per-path.
 
     Args:
@@ -482,9 +496,10 @@ def save_figure_multi(fig: matplotlib.figure.Figure, download_fpaths: list[str])
         download_fpaths: Output paths (e.g. one ".pdf" and one ".png").
             Each path's format is inferred from its extension, same as
             `save_figure`.
+        dpi: See `save_figure`.
     """
     for fpath in download_fpaths:
-        save_figure(fig, fpath)
+        save_figure(fig, fpath, dpi=dpi)
 
 
 def finalise_figure(
@@ -492,6 +507,7 @@ def finalise_figure(
     interactive: bool,
     download: bool,
     download_fpath: str | list[str] | None,
+    dpi: int | None = None,
 ) -> None:
     """Show and/or save a figure, per the interactive/download/download_fpath flags.
 
@@ -507,6 +523,7 @@ def finalise_figure(
         download_fpath: Output path when download=True, or a list of paths
             to save the same figure in multiple formats at once. Format is
             inferred per-path from its extension.
+        dpi: See `save_figure`.
     """
     if interactive:
         import matplotlib.pyplot as plt
@@ -518,4 +535,4 @@ def finalise_figure(
         fpaths = (
             download_fpath if isinstance(download_fpath, list) else [download_fpath]
         )
-        save_figure_multi(fig, fpaths)
+        save_figure_multi(fig, fpaths, dpi=dpi)

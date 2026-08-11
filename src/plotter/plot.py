@@ -47,6 +47,7 @@ def plot_1d(
     interactive: bool = False,
     download: bool = False,
     download_fpath: str | list[str] | None = None,
+    dpi: int | None = None,
 ) -> None:
     """Plot a single 1D line.
 
@@ -84,6 +85,11 @@ def plot_1d(
         download_fpath: Output path when download=True, or a list of paths
             to save the same figure in multiple formats at once. Format is
             inferred per-path from its extension.
+        dpi: Override for the package's default save DPI on this call only,
+            or None to use it (`plotter.utils.SAVE_DPI`, 1200). Lower this
+            for very large raster content (e.g. a heatmap with hundreds of
+            cells per side) where the default would produce an unreasonably
+            large file.
     """
     style = resolve_style(
         paper,
@@ -107,7 +113,7 @@ def plot_1d(
     if title:
         ax.set_title(title, fontsize=style["title_fontsize"], fontfamily=style["font"])
 
-    finalise_figure(fig, interactive, download, download_fpath)
+    finalise_figure(fig, interactive, download, download_fpath, dpi=dpi)
 
 
 def plot_2d(
@@ -138,6 +144,7 @@ def plot_2d(
     interactive: bool = False,
     download: bool = False,
     download_fpath: str | list[str] | None = None,
+    dpi: int | None = None,
 ) -> None:
     """Plot a single 2D heatmap.
 
@@ -180,6 +187,11 @@ def plot_2d(
         download_fpath: Output path when download=True, or a list of paths
             to save the same figure in multiple formats at once. Format is
             inferred per-path from its extension.
+        dpi: Override for the package's default save DPI on this call only,
+            or None to use it (`plotter.utils.SAVE_DPI`, 1200). Lower this
+            for very large raster content (e.g. a heatmap with hundreds of
+            cells per side) where the default would produce an unreasonably
+            large file.
     """
     style = resolve_style(
         paper,
@@ -204,7 +216,7 @@ def plot_2d(
     if title:
         ax.set_title(title, fontsize=style["title_fontsize"], fontfamily=style["font"])
 
-    finalise_figure(fig, interactive, download, download_fpath)
+    finalise_figure(fig, interactive, download, download_fpath, dpi=dpi)
 
 
 # %% 3D plot builder
@@ -236,6 +248,7 @@ def plot_3d(
     interactive: bool = False,
     download: bool = False,
     download_fpath: str | list[str] | None = None,
+    dpi: int | None = None,
 ) -> None:
     """Plot a single 3D surface.
 
@@ -274,6 +287,11 @@ def plot_3d(
         download_fpath: Output path when download=True, or a list of paths
             to save the same figure in multiple formats at once. Format is
             inferred per-path from its extension.
+        dpi: Override for the package's default save DPI on this call only,
+            or None to use it (`plotter.utils.SAVE_DPI`, 1200). Lower this
+            for very large raster content (e.g. a heatmap with hundreds of
+            cells per side) where the default would produce an unreasonably
+            large file.
     """
     style = resolve_style(
         paper,
@@ -298,7 +316,7 @@ def plot_3d(
     if title:
         ax.set_title(title, fontsize=style["title_fontsize"], fontfamily=style["font"])
 
-    finalise_figure(fig, interactive, download, download_fpath)
+    finalise_figure(fig, interactive, download, download_fpath, dpi=dpi)
 
 
 # %% Multi-panel and distribution plots
@@ -320,6 +338,7 @@ def plot_multi(
     interactive: bool = False,
     download: bool = False,
     download_fpath: str | list[str] | None = None,
+    dpi: int | None = None,
     return_fig: bool = False,
 ):
     """Plot a grid of 1D, 2D, and/or 3D panels as subplots.
@@ -463,7 +482,7 @@ def plot_multi(
     if return_fig:
         return fig
 
-    finalise_figure(fig, interactive, download, download_fpath)
+    finalise_figure(fig, interactive, download, download_fpath, dpi=dpi)
     return None
 
 
@@ -488,6 +507,7 @@ def plot_1d_multi(
     interactive: bool = False,
     download: bool = False,
     download_fpath: str | list[str] | None = None,
+    dpi: int | None = None,
 ) -> None:
     """Plot multiple 1D lines together on one shared figure.
 
@@ -521,6 +541,11 @@ def plot_1d_multi(
         download_fpath: Output path when download=True, or a list of paths
             to save the same figure in multiple formats at once. Format is
             inferred per-path from its extension.
+        dpi: Override for the package's default save DPI on this call only,
+            or None to use it (`plotter.utils.SAVE_DPI`, 1200). Lower this
+            for very large raster content (e.g. a heatmap with hundreds of
+            cells per side) where the default would produce an unreasonably
+            large file.
     """
     style = resolve_style(
         paper,
@@ -547,7 +572,7 @@ def plot_1d_multi(
     if ylim is not None:
         ax.set_ylim(ylim)
 
-    finalise_figure(fig, interactive, download, download_fpath)
+    finalise_figure(fig, interactive, download, download_fpath, dpi=dpi)
 
 
 def plot_violin(
@@ -566,6 +591,7 @@ def plot_violin(
     interactive: bool = False,
     download: bool = False,
     download_fpath: str | list[str] | None = None,
+    dpi: int | None = None,
 ) -> None:
     """Plot one or more distributions as violin plots.
 
@@ -590,6 +616,11 @@ def plot_violin(
         download_fpath: Output path when download=True, or a list of paths
             to save the same figure in multiple formats at once. Format is
             inferred per-path from its extension.
+        dpi: Override for the package's default save DPI on this call only,
+            or None to use it (`plotter.utils.SAVE_DPI`, 1200). Lower this
+            for very large raster content (e.g. a heatmap with hundreds of
+            cells per side) where the default would produce an unreasonably
+            large file.
     """
     labels = (
         labels if labels is not None else [f"Group {i + 1}" for i in range(len(data))]
@@ -613,7 +644,7 @@ def plot_violin(
         ax.set_title(title, fontsize=style["title_fontsize"], fontfamily=style["font"])
     style_axes(ax, style, xaxis_title=xaxis_title, yaxis_title=yaxis_title)
 
-    finalise_figure(fig, interactive, download, download_fpath)
+    finalise_figure(fig, interactive, download, download_fpath, dpi=dpi)
 
 
 def plot_box(
@@ -632,6 +663,7 @@ def plot_box(
     interactive: bool = False,
     download: bool = False,
     download_fpath: str | list[str] | None = None,
+    dpi: int | None = None,
 ) -> None:
     """Plot one or more distributions as box plots.
 
@@ -656,6 +688,11 @@ def plot_box(
         download_fpath: Output path when download=True, or a list of paths
             to save the same figure in multiple formats at once. Format is
             inferred per-path from its extension.
+        dpi: Override for the package's default save DPI on this call only,
+            or None to use it (`plotter.utils.SAVE_DPI`, 1200). Lower this
+            for very large raster content (e.g. a heatmap with hundreds of
+            cells per side) where the default would produce an unreasonably
+            large file.
     """
     labels = (
         labels if labels is not None else [f"Group {i + 1}" for i in range(len(data))]
@@ -677,7 +714,7 @@ def plot_box(
         ax.set_title(title, fontsize=style["title_fontsize"], fontfamily=style["font"])
     style_axes(ax, style, xaxis_title=xaxis_title, yaxis_title=yaxis_title)
 
-    finalise_figure(fig, interactive, download, download_fpath)
+    finalise_figure(fig, interactive, download, download_fpath, dpi=dpi)
 
 
 def plot_confusion_matrix(
@@ -699,6 +736,7 @@ def plot_confusion_matrix(
     interactive: bool = False,
     download: bool = False,
     download_fpath: str | list[str] | None = None,
+    dpi: int | None = None,
 ) -> None:
     """Plot a confusion matrix as a heatmap.
 
@@ -736,6 +774,11 @@ def plot_confusion_matrix(
         download_fpath: Output path when download=True, or a list of paths
             to save the same figure in multiple formats at once. Format is
             inferred per-path from its extension.
+        dpi: Override for the package's default save DPI on this call only,
+            or None to use it (`plotter.utils.SAVE_DPI`, 1200). Lower this
+            for very large raster content (e.g. a heatmap with hundreds of
+            cells per side) where the default would produce an unreasonably
+            large file.
     """
     cm = to_numpy(cm).astype(float)
     labels = [str(label) for label in labels]
@@ -776,4 +819,4 @@ def plot_confusion_matrix(
     if title:
         ax.set_title(title, fontsize=style["title_fontsize"], fontfamily=style["font"])
 
-    finalise_figure(fig, interactive, download, download_fpath)
+    finalise_figure(fig, interactive, download, download_fpath, dpi=dpi)

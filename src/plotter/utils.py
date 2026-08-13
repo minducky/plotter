@@ -137,6 +137,40 @@ def add_colorbar(fig, im, ax, tick_fontsize: float | None = None, show_ticklabel
     return cbar
 
 
+def add_colorbar_group(fig, im, axes, tick_fontsize: float | None = None, show_ticklabels: bool = True):
+    """Adds one colorbar spanning multiple Axes (e.g. one shared scale for
+    an entire row/column of panels), styled to match `add_colorbar`.
+
+    `add_colorbar` uses a divider-based `cax` so it never touches
+    constrained_layout's own colorbar handling -- but a divider only makes
+    sense for a single Axes. For a colorbar meant to span several Axes at
+    once, a plain `fig.colorbar(im, ax=axes)` is actually the right tool:
+    constrained_layout reserves space across their combined bounding box
+    automatically. This wraps that call with the same border/tick styling
+    `add_colorbar` uses, so callers don't have to repeat
+    `cbar.outline.set_linewidth(0.5)` (and the ticklabel toggle) by hand
+    every time.
+
+    Args:
+        fig: Figure the colorbar belongs to.
+        im: The image/mappable returned by imshow/pcolormesh/etc.
+        axes: The Axes the colorbar should span.
+        tick_fontsize: Font size for the colorbar's tick labels, or None.
+        show_ticklabels: Whether to show numeric tick labels on the colorbar
+            (the gradient itself is always shown).
+
+    Returns:
+        The created Colorbar.
+    """
+    cbar = fig.colorbar(im, ax=axes)
+    cbar.outline.set_linewidth(0.5)
+    if tick_fontsize is not None:
+        cbar.ax.tick_params(labelsize=tick_fontsize)
+    if not show_ticklabels:
+        cbar.set_ticks([])
+    return cbar
+
+
 def reserve_colorbar_space(ax, size: str = COLORBAR_SIZE, pad: str = COLORBAR_PAD) -> None:
     """Shrinks `ax` by the same amount `add_colorbar` would, without drawing
     a colorbar there.
@@ -223,7 +257,9 @@ def draw_1d(
         xticklabels: X-axis tick labels, or None to show tick values.
         yticks: Y-axis tick positions, or None for matplotlib's default.
         yticklabels: Y-axis tick labels, or None to show tick values.
-        xlim: (min, max) x-axis range, or None for matplotlib's auto-range.
+        xlim: (min, max) x-axis range, or None to clip tight to the data's
+            own min/max (no autoscale margin -- 1D signal panels are
+            expected to show exactly their data span, not padded out).
         ylim: (min, max) y-axis range, or None for matplotlib's auto-range.
         label: Legend label for this line, or None. Caller is responsible
             for calling `ax.legend()` if a legend should actually be shown.
@@ -231,13 +267,16 @@ def draw_1d(
     Returns:
         The Line2D created by `ax.plot`.
     """
+    x_np = to_numpy(x)
     (line,) = ax.plot(
-        to_numpy(x), to_numpy(y), color=color, linewidth=line_width, label=label
+        x_np, to_numpy(y), color=color, linewidth=line_width, label=label
     )
     style_axes(ax, style, xaxis_title=xaxis_title, yaxis_title=yaxis_title)
     apply_ticks(ax, xticks, xticklabels, yticks, yticklabels)
     if xlim is not None:
         ax.set_xlim(xlim)
+    elif x_np.size > 0:
+        ax.set_xlim(x_np.min(), x_np.max())
     if ylim is not None:
         ax.set_ylim(ylim)
     return line

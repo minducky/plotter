@@ -20,6 +20,15 @@ from plotter.utils import (
     to_numpy,
 )
 
+# constrained_layout padding for plot_multi, tighter than matplotlib's
+# defaults (w_pad=h_pad=0.0417in, wspace=hspace=0.02) so multi-panel figures
+# fill their target column width with less dead space between panels.
+# Tighter than this and a panel's tick labels start colliding with its
+# neighbor's border (checked visually down to w_pad=h_pad=0.005, wspace=
+# hspace=0 -- too tight).
+MULTI_PANEL_PAD = 0.01  # inches, between each axes and the figure/neighbor
+MULTI_PANEL_SPACE = 0.005  # fraction of panel size, between adjacent panels
+
 # %% Core 1D / 2D plot builders
 
 
@@ -424,6 +433,10 @@ def plot_multi(
     fig, axes = plt.subplots(
         rows, cols, figsize=resolve_figsize(style),
         squeeze=False, constrained_layout=True,
+    )
+    fig.get_layout_engine().set(
+        w_pad=MULTI_PANEL_PAD, h_pad=MULTI_PANEL_PAD,
+        wspace=MULTI_PANEL_SPACE, hspace=MULTI_PANEL_SPACE,
     )
 
     for idx, panel in enumerate(panels):
